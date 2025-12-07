@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>fx.js — Fragment eXchange</title>
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="icon" href="data:,">
+</head>
+<body>
+  <header>
+    <div class="nav">
+      <div class="brand">
+        <span class="dot"></span>
+        <span>fx.js</span>
+      </div>
+      <div class="nav-links">
+        <a href="#motivation">Motivation</a>
+        <a href="#model">Model</a>
+        <a href="#reference">Reference</a>
+        <a href="#demo">Demo</a>
+        <a class="button secondary" href="https://github.com/kciuffolo/fragment-exchange">GitHub</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <section class="hero">
+      <p class="tag">Fragment-oriented navigation for server-rendered applications</p>
+      <h1>The server already knows how to render the truth. The browser just swaps the parts that changed.</h1>
+      <p class="lead">fx is a minimal JavaScript library that enables partial page updates without changing the foundational architecture of your application. One attribute. No build tools. No framework.</p>
+      
+      <div class="card" style="margin-top: 32px">
+        <pre><code>&lt;script src="/fx.js" defer&gt;&lt;/script&gt;
+
+&lt;a href="/reports" <span class="hl">fx-target="#content"</span>&gt;
+  Reports
+&lt;/a&gt;
+
+&lt;main id="content"&gt;
+  &lt;!-- Server-rendered HTML --&gt;
+&lt;/main&gt;</code></pre>
+      </div>
+
+      <div class="hero-cta" style="margin-top: 24px">
+        <a class="button" href="#model">Read the model</a>
+        <a class="button secondary" href="./demo/">View demo</a>
+      </div>
+    </section>
+
+    <section class="section" id="motivation">
+      <div class="section-heading">
+        <p class="tag">Motivation</p>
+        <h2>The cost of accidental complexity</h2>
+      </div>
+      
+      <div class="prose">
+        <p>Modern web development often assumes that client-side frameworks are the default choice, even for applications whose data flow and operational requirements are inherently server-centric. Engineering teams frequently carry the operational burden of front-end toolchains, dependency ecosystems, and dual-state architectures—despite not benefiting from the abstractions those systems were designed to provide.</p>
+        
+        <p>Most internal systems, dashboards, and data-intensive applications do not gain meaningful leverage from client-side component frameworks. They carry a cost in toolchain maintenance, state duplication, divergence between client assumptions and server reality, dependency risks, and onboarding friction.</p>
+        
+        <p>fx explores the opposite direction. Rather than replacing or overshadowing server-rendered HTML, fx provides a minimal mechanism for fragment updates that remains strictly subordinate to server output.</p>
+      </div>
+
+      <div class="highlight-card">
+        <h3>The baseline remains strong</h3>
+        <p>Server-side rendering is simple, observable, and robust. It works with caching, load balancers, logs, and existing application logic. Engineers already understand it.</p>
+        <p>A full-page reload is correct and trivial; the challenge is the user experience cost when only a small portion of the document changed. fx addresses this gap with minimal machinery.</p>
+      </div>
+
+      <div class="principle-grid">
+        <div class="principle">
+          <h4>Server authority</h4>
+          <p>All rendering originates from the backend. The server is the single source of truth for what the page should contain.</p>
+        </div>
+        <div class="principle">
+          <h4>URL-driven state</h4>
+          <p>The URL encodes the entire view state. Reload, share, or bookmark—the result is always deterministic.</p>
+        </div>
+        <div class="principle">
+          <h4>Minimal API surface</h4>
+          <p>One primary affordance. The operational model can be fully understood in minutes, not hours.</p>
+        </div>
+        <div class="principle">
+          <h4>Failure safety</h4>
+          <p>fx declines into ordinary navigation when needed. If JavaScript fails, the application continues to function.</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="gradient-line"></div>
+
+    <section class="section" id="model">
+      <div class="section-heading">
+        <p class="tag">Core Model</p>
+        <h2>The operational model</h2>
+      </div>
+      
+      <div class="prose">
+        <p>fx is built around a single attribute: <code>fx-target</code>. The operational model is intentionally simple:</p>
+      </div>
+
+      <div class="model-steps">
+        <div class="model-step">
+          <span class="step-number">1</span>
+          <p>The server renders a complete HTML document.</p>
+        </div>
+        <div class="model-step">
+          <span class="step-number">2</span>
+          <p>A navigation event (click or form submit) triggers a request for the next document.</p>
+        </div>
+        <div class="model-step">
+          <span class="step-number">3</span>
+          <p>The returned document is parsed in memory.</p>
+        </div>
+        <div class="model-step">
+          <span class="step-number">4</span>
+          <p>The fragment associated with <code>fx-target</code> is extracted and swapped into the current DOM.</p>
+        </div>
+        <div class="model-step">
+          <span class="step-number">5</span>
+          <p>Browser history is updated.</p>
+        </div>
+        <div class="model-step">
+          <span class="step-number">6</span>
+          <p>Failure modes fall back to normal navigation.</p>
+        </div>
+      </div>
+
+      <div class="prose" style="margin-top: 48px">
+        <p>This approach avoids virtual DOMs, hydration, and client-side state. The server remains authoritative; the browser is a display layer.</p>
+      </div>
+
+      <div class="example-block">
+        <div class="example-header">
+          <h3>Link navigation</h3>
+        </div>
+        <div class="example-content">
+          <pre><code>&lt;a href="/settings" <span class="hl">fx-target="#main"</span>&gt;
+  Settings
+&lt;/a&gt;
+
+&lt;div id="main"&gt;
+  &lt;!-- Content rendered by server --&gt;
+&lt;/div&gt;</code></pre>
+          <div class="example-explanation">
+            <p>When clicked, fx fetches <code>/settings</code>, extracts <code>#main</code> from the response, and replaces the current <code>#main</code>. The URL updates. History is preserved.</p>
+            <p>If JavaScript is unavailable, the link functions normally.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="example-block">
+        <div class="example-header">
+          <h3>Form submission</h3>
+        </div>
+        <div class="example-content">
+          <pre><code>&lt;form action="/search" method="GET"
+      <span class="hl">fx-target="#results"</span>&gt;
+  &lt;input name="q"&gt;
+  &lt;button&gt;Search&lt;/button&gt;
+&lt;/form&gt;
+
+&lt;div id="results"&gt;&lt;/div&gt;</code></pre>
+          <div class="example-explanation">
+            <p>On submit, fx serializes the form, constructs the URL with query parameters, fetches the response, and swaps <code>#results</code>.</p>
+            <p>The URL reflects the query state, enabling bookmarking and sharing.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="example-block">
+        <div class="example-header">
+          <h3>Loading indication</h3>
+        </div>
+        <div class="example-content">
+          <pre><code>&lt;a href="/reports"
+   fx-target="#content"
+   <span class="hl">fx-loading-target="#content"</span>&gt;
+  Reports
+&lt;/a&gt;</code></pre>
+          <div class="example-explanation">
+            <p>During the request, the element specified by <code>fx-loading-target</code> receives the class <code>fx-loading</code>. This enables CSS-based loading states.</p>
+            <p>The class is removed when the request completes.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="example-block">
+        <div class="example-header">
+          <h3>Eager fragments</h3>
+        </div>
+        <div class="example-content">
+          <pre><code>&lt;nav id="sidebar" <span class="hl">fx-hungry</span>&gt;
+  &lt;!-- Navigation, badges, status --&gt;
+&lt;/nav&gt;</code></pre>
+          <div class="example-explanation">
+            <p>Elements marked <code>fx-hungry</code> are included in every fragment swap, regardless of the explicit target. This ensures layout-level components remain synchronized with server state.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="example-block">
+        <div class="example-header">
+          <h3>Interval-based refresh</h3>
+        </div>
+        <div class="example-content">
+          <pre><code>&lt;meta name="fx-refresh"
+      <span class="hl">fx-interval="5000"</span>
+      <span class="hl">fx-target="#metrics"</span>&gt;
+
+&lt;div id="metrics"&gt;
+  &lt;!-- Live data --&gt;
+&lt;/div&gt;</code></pre>
+          <div class="example-explanation">
+            <p>The meta tag instructs fx to poll the current URL at the specified interval and refresh the target fragment.</p>
+            <p>Timers are automatically cancelled on navigation or when the meta element leaves the DOM.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="gradient-line"></div>
+
+    <section class="section" id="reference">
+      <div class="section-heading">
+        <p class="tag">Reference</p>
+        <h2>Complete API</h2>
+      </div>
+
+      <div class="card">
+        <h3>Attributes</h3>
+        <table class="table">
+          <thead>
+            <tr><th>Attribute</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>fx-target</code></td>
+              <td>CSS selector(s) identifying fragments to replace. Multiple selectors may be comma-separated.</td>
+            </tr>
+            <tr>
+              <td><code>fx-loading-target</code></td>
+              <td>CSS selector(s) identifying elements that receive the <code>fx-loading</code> class during requests.</td>
+            </tr>
+            <tr>
+              <td><code>fx-hungry</code></td>
+              <td>Marks an element for inclusion in all fragment swaps. Requires an <code>id</code> attribute.</td>
+            </tr>
+            <tr>
+              <td><code>fx-interval</code></td>
+              <td>On <code>&lt;meta name="fx-refresh"&gt;</code>, specifies polling interval in milliseconds.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="grid two" style="margin-top: 16px">
+        <div class="card">
+          <h3>Runtime configuration</h3>
+          <table class="table">
+            <tbody>
+              <tr><td><code>fx.timeout</code></td><td>Request timeout (default: 10000ms)</td></tr>
+              <tr><td><code>fx.clickFallback</code></td><td>Handler for failed link navigations</td></tr>
+              <tr><td><code>fx.submitFallback</code></td><td>Handler for failed form submissions</td></tr>
+              <tr><td><code>fx.historyFallback</code></td><td>Handler for failed history navigations</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card">
+          <h3>Server protocol</h3>
+          <p>Each request includes an <code>FX-Target</code> header containing the requested selectors.</p>
+          <p style="margin-top: 12px">The server may return a complete document (simplest) or only the requested fragments (efficient). Both approaches are valid.</p>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: 16px">
+        <h3>Development helper</h3>
+        <p>Include <code>fx.dev.js</code> during development. It provides console warnings for common issues:</p>
+        <ul class="list inline">
+          <li>Duplicate element IDs</li>
+          <li>Missing target elements</li>
+          <li>Hungry elements without IDs</li>
+          <li>Invalid refresh configurations</li>
+          <li>Nested target elements</li>
+        </ul>
+        <p style="margin-top: 16px">Enable verbose logging with <code>?fx-log=true</code> or <code>fx.toggleLog(true)</code>.</p>
+      </div>
+    </section>
+
+    <div class="gradient-line"></div>
+
+    <section class="section">
+      <div class="section-heading">
+        <p class="tag">Scope</p>
+        <h2>Non-goals</h2>
+      </div>
+      
+      <div class="prose">
+        <p>fx does not provide components, client-side routing, reactivity, global state management, server-side rendering replacement, or template systems. These omissions are deliberate and central to the library's usefulness.</p>
+        <p>fx should not be interpreted as a replacement for richer client-side environments. It is deliberately unambitious. Its value lies in acknowledging that many applications do not need the operational surface of modern front-end systems.</p>
+      </div>
+
+      <div class="grid three" style="margin-top: 32px">
+        <div class="card">
+          <h4>Predictability</h4>
+          <p>The backend remains the single source of truth. There is no divergence between client and server state.</p>
+        </div>
+        <div class="card">
+          <h4>Composability</h4>
+          <p>fx does not claim ownership of the DOM. It coexists with other libraries and widgets.</p>
+        </div>
+        <div class="card">
+          <h4>Epistemic simplicity</h4>
+          <p>Engineers can fully reason about the system. The entire library can be read in one sitting.</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="gradient-line"></div>
+
+    <section class="section" id="demo">
+      <div class="section-heading">
+        <p class="tag">Demonstration</p>
+        <h2>Working example</h2>
+      </div>
+      <div class="card">
+        <p>The <a href="./demo/">demonstration</a> consists of static HTML pages that fetch each other, swap fragments, display loading states, and execute interval-based polling. No backend is required.</p>
+        <p style="margin-top: 12px">Serve the repository root and navigate to <code>/docs/demo/</code>.</p>
+        <div style="margin-top: 20px">
+          <a class="button" href="./demo/">Open demonstration</a>
+        </div>
+      </div>
+    </section>
+
+    <div class="cta">
+      <h2>Installation</h2>
+      <p>Copy <code>fx.js</code> into your project. No build step required.</p>
+      <div style="margin-top: 20px">
+        <a class="button" href="https://github.com/kciuffolo/fragment-exchange">View on GitHub</a>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>fx.js — Fragment-level navigation without framework overhead.</p>
+  </footer>
+</body>
+</html>
