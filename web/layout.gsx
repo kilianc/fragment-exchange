@@ -31,7 +31,7 @@ func Layout(c *Ctx) Node {
 					{/* fx-hungry: swapped on every navigation, whatever the link asked for */}
 					<title id="page-title" fx-hungry>{title}</title>
 
-					<meta name="description" content={c.Page.Lede} />
+					<meta name="description" content={c.Page.description()} />
 					<link rel="icon" href={favicon} />
 					{El("style", Raw(stylesheet))}
 
@@ -109,6 +109,7 @@ func PageHead(c *Ctx) Node {
 	return (
 		<div class="page-head">
 			<h1>{heading}</h1>
+			{If(c.Page.Tagline != "", <p class="tagline">{c.Page.Tagline}</p>)}
 			{If(c.Page.Lede != "", <p class="lede">{c.Page.Lede}</p>)}
 		</div>
 	)

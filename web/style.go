@@ -158,6 +158,18 @@ main { padding: 48px 0 96px; max-width: 740px; }
 main.wide { max-width: none; }
 
 .page-head { margin-bottom: 36px; }
+/* The deck: the claim, between the title and the explanation. Full-strength
+   colour, because it is the line the page is actually making. */
+.tagline {
+  font-size: 1.5rem;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  font-weight: 600;
+  color: var(--fg);
+  margin: 0 0 14px;
+  max-width: 30ch;
+}
+
 .lede { font-size: 1.2rem; line-height: 1.6; color: var(--fg-muted); margin: 0; max-width: 60ch; }
 
 footer.bottom {

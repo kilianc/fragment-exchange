@@ -41,7 +41,7 @@ func Layout(c *Ctx) Node {
 					html.Content("width=device-width, initial-scale=1"),
 				),
 				html.TitleEl(html.ID("page-title"), Attr("fx-hungry"), Text(title)),
-				html.Meta(html.Name("description"), html.Content(c.Page.Lede)),
+				html.Meta(html.Name("description"), html.Content(c.Page.description())),
 				html.Link(html.Rel("icon"), html.Href(favicon)),
 				El("style", Raw(stylesheet)),
 				html.Script(html.Src("/fx.js")),
@@ -124,6 +124,7 @@ func PageHead(c *Ctx) Node {
 	return html.Div(
 		html.Class("page-head"),
 		html.H1(Text(heading)),
+		If(c.Page.Tagline != "", html.P(html.Class("tagline"), Text(c.Page.Tagline))),
 		If(c.Page.Lede != "", html.P(html.Class("lede"), Text(c.Page.Lede))),
 	)
 }

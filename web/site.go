@@ -28,9 +28,12 @@ type Page struct {
 	// Headline is the <h1>, when the thing to say to a reader is not the thing
 	// to put in a browser tab.
 	Headline string
-	Lede     string
-	Wide     bool
-	Body     func(c *Ctx) g.Node
+	// Tagline is the claim under the title: what the reader gets, in one line,
+	// before any explanation of how.
+	Tagline string
+	Lede    string
+	Wide    bool
+	Body    func(c *Ctx) g.Node
 }
 
 // Path is the URL this page is served from.
@@ -145,4 +148,13 @@ func notFoundPage() Page {
 		Lede:  "That page does not exist. The ones that do are in the nav.",
 		Body:  func(c *Ctx) g.Node { return g.Text("") },
 	}
+}
+
+// description is what a search result and a link preview show: the claim if
+// the page makes one, and the explanation either way.
+func (p Page) description() string {
+	if p.Tagline == "" {
+		return p.Lede
+	}
+	return p.Tagline + " " + p.Lede
 }
