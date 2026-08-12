@@ -274,3 +274,116 @@ func wrap(text string, x, y, width int) string {
 
 	return b.String()
 }
+
+// HookDiagram is the first thing on the home page: what is in the browser the
+// usual way, and what is in it with fx.
+//
+// It is deliberately not accurate about anybody's stack. It is a hook — the
+// argument in one glance, before the reader has agreed to read anything. The
+// honest, detailed version is LifecycleDiagram further down the page.
+func HookDiagram() g.Node {
+	var b strings.Builder
+
+	fmt.Fprintf(&b, `<svg class="diagram hook" viewBox="0 0 1000 404" role="img" `+
+		`aria-label="The usual way keeps a router, a store, components, hydration and a fetch client in the browser and state in two places. `+
+		`With fx the browser holds one file and the state is the URL.">`)
+
+	b.WriteString(defs())
+
+	b.WriteString(panel(panelSpec{
+		X:       0,
+		Kicker:  "THE USUAL WAY",
+		URL:     "/reports?status=open",
+		URLNote: "",
+		Blocks:  []string{"router", "store", "components", "hydration", "fetch client"},
+		Wire:    "JSON",
+		Server:  "API",
+		Notes:   []string{"state lives in two places, and they disagree", "+ a build step, a lockfile, and a few hundred dependencies"},
+	}))
+
+	b.WriteString(panel(panelSpec{
+		X:       530,
+		Kicker:  "WITH FX",
+		URL:     "/reports?status=open",
+		URLNote: "all of your state, right here",
+		Blocks:  []string{"fx.js"},
+		Wire:    "HTML",
+		Server:  "your server, rendering pages",
+		Notes:   []string{"state lives in one place, and the server can read it", "no build step, no lockfile, nothing to install"},
+		Accent:  true,
+	}))
+
+	b.WriteString(`</svg>`)
+	return g.Raw(b.String())
+}
+
+type panelSpec struct {
+	X       int
+	Kicker  string
+	URL     string
+	URLNote string
+	Blocks  []string
+	Wire    string
+	Server  string
+	Notes   []string
+	Accent  bool
+}
+
+func panel(p panelSpec) string {
+	const w = 470
+
+	var b strings.Builder
+	x := p.X
+
+	tone := func(base string) string {
+		if p.Accent {
+			return base + " " + base + "-on"
+		}
+		return base + " " + base + "-off"
+	}
+
+	fmt.Fprintf(&b, `<g>`)
+	fmt.Fprintf(&b, `<text class="%s" x="%d" y="14">%s</text>`, tone("h-kicker"), x, p.Kicker)
+
+	// The browser.
+	fmt.Fprintf(&b, `<rect class="%s" x="%d" y="26" width="%d" height="216" rx="12" />`, tone("h-frame"), x, w)
+	fmt.Fprintf(&b, `<text class="h-cap" x="%d" y="50">BROWSER</text>`, x+18)
+
+	// The address bar, which on one side is the whole state and on the other
+	// is a thing the client has to be kept in sync with.
+	fmt.Fprintf(&b, `<rect class="%s" x="%d" y="62" width="%d" height="30" rx="8" />`, tone("h-url"), x+18, w-36)
+	fmt.Fprintf(&b, `<text class="%s" x="%d" y="82">%s</text>`, tone("h-urlt"), x+32, html.EscapeString(p.URL))
+
+	if p.URLNote != "" {
+		fmt.Fprintf(&b, `<text class="h-urlnote" x="%d" y="82" text-anchor="end">%s</text>`, x+w-32, html.EscapeString(p.URLNote))
+	}
+
+	// What the browser is carrying.
+	top := 110
+	if len(p.Blocks) == 1 {
+		top = 160 // one block, centred, and the empty space is the point
+	}
+	for i, name := range p.Blocks {
+		y := top + i*24
+		fmt.Fprintf(&b, `<rect class="%s" x="%d" y="%d" width="%d" height="20" rx="5" />`, tone("h-block"), x+18, y, w-36)
+		fmt.Fprintf(&b, `<text class="%s" x="%d" y="%d">%s</text>`, tone("h-blockt"), x+32, y+15, html.EscapeString(name))
+	}
+
+	// The wire.
+	fmt.Fprintf(&b, `<line class="%s" x1="%d" y1="242" x2="%d" y2="286" />`, tone("h-line"), x+w/2, x+w/2)
+	fmt.Fprintf(&b, `<use href="#fx-arrow-r" class="%s" x="%d" y="%d" transform="rotate(90 %d 286)" />`,
+		tone("h-head"), x+w/2, 282, x+w/2)
+	fmt.Fprintf(&b, `<text class="%s" x="%d" y="270">%s</text>`, tone("h-wire"), x+w/2+14, p.Wire)
+
+	// The server.
+	fmt.Fprintf(&b, `<rect class="%s" x="%d" y="292" width="%d" height="46" rx="12" />`, tone("h-frame"), x, w)
+	fmt.Fprintf(&b, `<text class="%s" x="%d" y="321">%s</text>`, tone("h-server"), x+18, html.EscapeString(p.Server))
+
+	// The point.
+	for i, note := range p.Notes {
+		fmt.Fprintf(&b, `<text class="%s" x="%d" y="%d">%s</text>`, tone("h-note"), x, 366+i*20, html.EscapeString(note))
+	}
+
+	b.WriteString(`</g>`)
+	return b.String()
+}

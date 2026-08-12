@@ -101,9 +101,14 @@ func PageHead(c *Ctx) Node {
 		return nil
 	}
 
+	heading := c.Page.Headline
+	if heading == "" {
+		heading = c.Page.Title
+	}
+
 	return (
 		<div class="page-head">
-			<h1>{c.Page.Title}</h1>
+			<h1>{heading}</h1>
 			{If(c.Page.Lede != "", <p class="lede">{c.Page.Lede}</p>)}
 		</div>
 	)

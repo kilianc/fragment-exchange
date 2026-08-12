@@ -2,17 +2,24 @@ package web
 
 func IndexPage() Page {
 	return Page{
-		Slug:  "",
-		Nav:   "Overview",
-		Title: "fx — Fragment eXchange",
-		Lede:  "Your server already knows how to render the truth. The browser just swaps the parts that changed. One attribute, ~400 lines, no build step, no dependencies.",
-		Body:  indexBody,
+		Slug:     "",
+		Nav:      "Overview",
+		Title:    "fx — Fragment eXchange",
+		Headline: "No build step. No client state. Just your server.",
+		Lede:     "Every filter, every open pane, every sort order lives in the URL. Your server reads it and renders HTML, the way it always has, and fx swaps the fragment that changed. One attribute, about 400 lines, nothing to install.",
+		Body:     indexBody,
 	}
 }
 
 func indexBody(c *Ctx) Node {
 	return (
 		<>
+			<div class="figure-wide hero-figure">
+				<div class="diagram-scroll">
+					{HookDiagram()}
+				</div>
+			</div>
+
 			<div class="hero-cta">
 				<a class="btn btn-primary" href="/demo" fx-target="#content" fx-loading-target="#progress-bar">See it running</a>
 				<a class="btn" href="/reference" fx-target="#content" fx-loading-target="#progress-bar">Reference</a>
@@ -45,7 +52,7 @@ func indexBody(c *Ctx) Node {
 				any bigger.
 			</p>
 
-			{Pull(Text("A site built with fx is a site that works without fx. The library only makes it quicker."))}
+			{Pull(Text("State lives in two places: the URL, and your database. There is no third place for a bug to hide."))}
 
 			{Section("baseline", "The baseline is already good",
 				<p>
@@ -119,7 +126,7 @@ func indexBody(c *Ctx) Node {
 					the browser skip the reload and replace only what moved.
 				</p>,
 
-				Pull(Text("Not a client application that happens to talk to a server. A website that happens to skip the reload.")),
+				Pull(Text("A site built with fx is a site that works without fx. The library only makes it quicker.")),
 
 				<p>
 					That ordering is the whole design. If the enhanced path is the real path and the plain

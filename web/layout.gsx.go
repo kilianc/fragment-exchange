@@ -116,9 +116,14 @@ func PageHead(c *Ctx) Node {
 		return nil
 	}
 
+	heading := c.Page.Headline
+	if heading == "" {
+		heading = c.Page.Title
+	}
+
 	return html.Div(
 		html.Class("page-head"),
-		html.H1(Text(c.Page.Title)),
+		html.H1(Text(heading)),
 		If(c.Page.Lede != "", html.P(html.Class("lede"), Text(c.Page.Lede))),
 	)
 }

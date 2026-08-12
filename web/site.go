@@ -24,10 +24,13 @@ const fxVersion = fx.Version
 type Page struct {
 	Slug  string // "" is the index
 	Nav   string // label in the top nav; empty keeps it out
-	Title string
-	Lede  string
-	Wide  bool
-	Body  func(c *Ctx) g.Node
+	Title string // the <title>, and the heading unless Headline is set
+	// Headline is the <h1>, when the thing to say to a reader is not the thing
+	// to put in a browser tab.
+	Headline string
+	Lede     string
+	Wide     bool
+	Body     func(c *Ctx) g.Node
 }
 
 // Path is the URL this page is served from.

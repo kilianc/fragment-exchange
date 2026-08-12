@@ -400,6 +400,56 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
   max-width: 68ch;
 }
 
+/* ---- hook diagram --------------------------------------------------- */
+
+.hook { margin: 0 0 6px; }
+.hero-figure { margin-top: 4px; margin-bottom: 26px; }
+
+.h-kicker     { font: 600 11px var(--mono); letter-spacing: 0.11em; }
+.h-kicker-off { fill: var(--fg-faint); }
+.h-kicker-on  { fill: var(--accent); }
+
+.h-cap { fill: var(--fg-faint); font: 600 9.5px var(--mono); letter-spacing: 0.12em; }
+
+.h-frame     { fill: var(--bg-raised); stroke-width: 1; }
+.h-frame-off { stroke: var(--border); }
+.h-frame-on  { stroke: var(--border-strong); }
+
+.h-url     { }
+.h-url-off { fill: var(--bg-inset); }
+.h-url-on  { fill: var(--accent-soft); stroke: var(--accent); stroke-opacity: 0.5; }
+
+.h-urlt     { font: 13px var(--mono); }
+.h-urlt-off { fill: var(--fg-faint); }
+.h-urlt-on  { fill: var(--accent); font-weight: 600; }
+.h-urlnote  { fill: var(--accent); font: 600 10.5px var(--mono); }
+
+.h-block     { }
+.h-block-off { fill: var(--bg-inset); }
+.h-block-on  { fill: var(--accent); }
+
+.h-blockt     { font: 12px var(--mono); }
+.h-blockt-off { fill: var(--fg-muted); }
+.h-blockt-on  { fill: var(--accent-fg); font-weight: 600; }
+
+.h-line     { stroke-width: 1.5; }
+.h-line-off { stroke: var(--border-strong); }
+.h-line-on  { stroke: var(--accent); }
+.h-head-off { fill: var(--border-strong); }
+.h-head-on  { fill: var(--accent); }
+
+.h-wire     { font: 11px var(--mono); }
+.h-wire-off { fill: var(--fg-faint); }
+.h-wire-on  { fill: var(--accent); font-weight: 600; }
+
+.h-server     { font: 13.5px var(--sans); }
+.h-server-off { fill: var(--fg-muted); }
+.h-server-on  { fill: var(--fg); font-weight: 600; }
+
+.h-note     { font: 13px var(--sans); }
+.h-note-off { fill: var(--fg-faint); }
+.h-note-on  { fill: var(--fg); }
+
 /* ---- lifecycle diagram --------------------------------------------- */
 
 .diagram {

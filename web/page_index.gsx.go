@@ -11,16 +11,21 @@ import (
 
 func IndexPage() Page {
 	return Page{
-		Slug:  "",
-		Nav:   "Overview",
-		Title: "fx — Fragment eXchange",
-		Lede:  "Your server already knows how to render the truth. The browser just swaps the parts that changed. One attribute, ~400 lines, no build step, no dependencies.",
-		Body:  indexBody,
+		Slug:     "",
+		Nav:      "Overview",
+		Title:    "fx — Fragment eXchange",
+		Headline: "No build step. No client state. Just your server.",
+		Lede:     "Every filter, every open pane, every sort order lives in the URL. Your server reads it and renders HTML, the way it always has, and fx swaps the fragment that changed. One attribute, about 400 lines, nothing to install.",
+		Body:     indexBody,
 	}
 }
 
 func indexBody(c *Ctx) Node {
 	return Group{
+		html.Div(
+			html.Class("figure-wide hero-figure"),
+			html.Div(html.Class("diagram-scroll"), HookDiagram()),
+		),
 		html.Div(
 			html.Class("hero-cta"),
 			html.A(
@@ -77,7 +82,7 @@ func indexBody(c *Ctx) Node {
 		),
 		Pull(
 			Text(
-				"A site built with fx is a site that works without fx. The library only makes it quicker.",
+				"State lives in two places: the URL, and your database. There is no third place for a bug to hide.",
 			),
 		),
 		Section(
@@ -163,7 +168,7 @@ func indexBody(c *Ctx) Node {
 			),
 			Pull(
 				Text(
-					"Not a client application that happens to talk to a server. A website that happens to skip the reload.",
+					"A site built with fx is a site that works without fx. The library only makes it quicker.",
 				),
 			),
 			html.P(
