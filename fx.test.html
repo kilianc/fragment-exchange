@@ -1,23 +1,89 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>fx-test</title>
-  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-  <script src="/static/fx.js"></script>
-  <script src="/static/fx.dev.js"></script>
-  <script src="/static/fx.test.js"></script>
-</head>
-<body>
-  <script>
-    if (window.top === window) {
-      let iframe = document.createElement('iframe');
-      iframe.src = '/static/fx.test.html';
-      document.body.appendChild(iframe);
-    } else {
-      runTests();
-    }
-  </script>
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>fx — tests</title>
+    <link rel="icon" href="data:," />
+    <script src="/fx.js"></script>
+    <script src="/fx.dev.js"></script>
+    <script src="/fx.test.js"></script>
+    <style>
+      body {
+        margin: 0;
+        padding: 24px;
+        font: 14px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace;
+        background: #fbfbfa;
+        color: #1a1a1c;
+      }
+      h1 {
+        font-size: 15px;
+        margin: 0 0 16px;
+      }
+      #fx-results {
+        margin: 0 0 16px;
+        white-space: pre-wrap;
+      }
+      .pass {
+        color: #1a7f5a;
+      }
+      .fail {
+        color: #c0392b;
+      }
+      iframe {
+        width: 100%;
+        height: 40vh;
+        border: 1px solid #e6e6e2;
+        border-radius: 8px;
+        background: #fff;
+      }
+    </style>
+  </head>
+  <body>
+    <script>
+      // The tests rewrite document.body and push history entries, so they run
+      // in an iframe and report back. Same file, two roles.
+      if (window.top === window) {
+        document.body.innerHTML = `
+          <h1>fx tests</h1>
+          <pre id="fx-results">running…</pre>
+          <iframe id="fx-frame" src="?frame=1" title="test frame"></iframe>
+        `;
+
+        window.addEventListener('message', (event) => {
+          if (event.source !== document.getElementById('fx-frame').contentWindow) return;
+          if (!event.data || event.data.kind !== 'fx-test-results') return;
+          render(event.data.results);
+        });
+      } else {
+        runTests().then((results) => {
+          // sendBeacon is not the fetch the tests mock, so the Go runner hears
+          // about the results even if a test left the mock installed.
+          if (navigator.sendBeacon) {
+            navigator.sendBeacon('/__fx_results', JSON.stringify(results));
+          }
+          window.parent.postMessage({ kind: 'fx-test-results', results }, '*');
+        });
+      }
+
+      function render(results) {
+        let lines = [];
+        for (let t of results.passed) lines.push(`<span class="pass">pass</span>  ${escape(t.name)} (${t.durationMs}ms)`);
+        for (let t of results.skipped) lines.push(`skip  ${escape(t)}`);
+        for (let t of results.failed) lines.push(`<span class="fail">FAIL</span>  ${escape(t.name)}\n      ${escape(t.error)}`);
+
+        let summary =
+          results.failed.length === 0
+            ? `<span class="pass">${results.passed.length} passed</span> in ${results.durationMs}ms`
+            : `<span class="fail">${results.failed.length} failed</span>, ${results.passed.length} passed`;
+
+        document.getElementById('fx-results').innerHTML = `${lines.join('\n')}\n\n${summary}`;
+        document.title = results.failed.length === 0 ? 'fx — tests pass' : 'fx — tests FAIL';
+      }
+
+      function escape(s) {
+        return String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
+      }
+    </script>
+  </body>
 </html>

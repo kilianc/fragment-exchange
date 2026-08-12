@@ -1,0 +1,41 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Install the GSX compiler
+        run: go install github.com/kilianc/gsx/cmd/gsx@latest
+
+      - name: Generated files are current
+        run: gsx -check ./web
+
+      - name: Sources are formatted
+        run: |
+          gsx fmt -l ./web
+          test -z "$(gofmt -l . | grep -v '\.gsx\.go$')" || { gofmt -l .; exit 1; }
+
+      - name: Vet
+        run: go vet ./...
+
+      # ubuntu-latest ships Chrome. The browser suite skips itself if it ever
+      # stops doing so, so make that a failure here rather than a silent pass.
+      - name: Chrome is available
+        run: google-chrome --version
+
+      - name: Test
+        env:
+          FX_CHROME: google-chrome
+        run: go test ./...

@@ -1,84 +1,142 @@
-# fx.js — Fragment eXchange
+<h1 align="center">fx — Fragment eXchange</h1>
 
-A minimal JavaScript library for fragment-oriented navigation in server-rendered applications.
+<p align="center">
+  <strong>Your server already knows how to render the page.<br />
+  fx swaps the parts that changed.</strong>
+</p>
 
-## Overview
+<p align="center">
+  One attribute · ~400 lines · no build step · no dependencies
+</p>
 
-fx enables partial page updates without changing the foundational architecture of your application. The server renders complete HTML documents; fx swaps the parts that changed.
+<p align="center">
+  <a href="https://fx.ciuffolo.com">Documentation</a> ·
+  <a href="https://fx.ciuffolo.com/why">Why it exists</a> ·
+  <a href="https://fx.ciuffolo.com/patterns">Patterns</a> ·
+  <a href="https://fx.ciuffolo.com/reference">Reference</a> ·
+  <a href="https://fx.ciuffolo.com/demo">Live demo</a>
+</p>
+
+---
 
 ```html
-<script src="/fx.js" defer></script>
+<script src="/fx.js"></script>
 
 <a href="/reports" fx-target="#content">Reports</a>
-<main id="content"><!-- Server-rendered HTML --></main>
+
+<main id="content">
+  <!-- whatever your server rendered -->
+</main>
 ```
 
-If JavaScript is unavailable, the link functions normally.
+Click the link and fx fetches `/reports`, lifts `#content` out of the response, puts it in
+the page and updates the address bar. No reload, no flash, no scroll jump.
 
-## Motivation
+Turn JavaScript off and the same link still works, because it is a link to a page your
+server renders. That is not a fallback bolted on afterwards — it is the starting point.
 
-Modern web development often assumes that client-side frameworks are the default choice, even for applications whose data flow and operational requirements are inherently server-centric. Engineering teams frequently carry the operational burden of front-end toolchains, dependency ecosystems, and dual-state architectures—despite not benefiting from the abstractions those systems were designed to provide.
+> A site built with fx is a site that works without fx. The library only makes it quicker.
 
-fx explores the opposite direction. Rather than replacing or overshadowing server-rendered HTML, fx provides a minimal mechanism for fragment updates that remains strictly subordinate to server output.
+## Why
 
-## Core Model
+Most internal tools, dashboards and admin panels are server-shaped: every fact on the
+screen lives in a database the server can already reach. They still get built with a
+package manager, a bundler, a component framework, a client-side router and a second copy
+of the domain model, and none of that buys anything except a nicer transition.
 
-1. The server renders a complete HTML document.
-2. A navigation event triggers a request for the next document.
-3. The returned document is parsed in memory.
-4. The fragment associated with `fx-target` is extracted and swapped into the current DOM.
-5. Browser history is updated.
-6. Failure modes fall back to normal navigation.
+fx is the smallest thing that gets you the nicer transition without the rest. HTMX and
+Unpoly are both good software that did not fit — the long version, including what fx
+borrows from Unpoly and what this approach costs you, is at
+[fx.ciuffolo.com/why](https://fx.ciuffolo.com/why).
 
-This approach avoids virtual DOMs, hydration, and client-side state.
+## What it does
 
-## Architectural Principles
+| | |
+|---|---|
+| `fx-target` | On a link or form: fetch the destination, swap these selectors |
+| `fx-loading-target` | Add the `fx-loading` class to these while the request is in flight |
+| `fx-hungry` | On any element with an `id`: swap me on every navigation |
+| `<meta name="fx-refresh" fx-interval>` | Re-fetch this page on an interval, swap a fragment |
 
-- **Server authority**: All rendering originates from the backend.
-- **URL-driven state**: The URL encodes the entire view state.
-- **Minimal API surface**: One primary affordance.
-- **Failure safety**: fx declines into ordinary navigation when needed.
+Plus one thing on your side: every request carries an `FX-Target` header naming the
+fragments the browser is about to use, so a handler can skip work nobody asked for. It is
+optional — a handler that ignores it is correct, just slower.
 
-## API Reference
+That is the whole API. If it were longer, the library would have failed.
 
-| Attribute | Description |
-|-----------|-------------|
-| `fx-target` | CSS selector(s) identifying fragments to replace |
-| `fx-loading-target` | Elements that receive `fx-loading` class during requests |
-| `fx-hungry` | Marks element for inclusion in all swaps (requires `id`) |
-| `fx-interval` | On `<meta name="fx-refresh">`, specifies polling interval in ms |
-
-### Runtime Configuration
-
-- `fx.timeout` — Request timeout (default: 10000ms)
-- `fx.clickFallback` — Handler for failed link navigations
-- `fx.submitFallback` — Handler for failed form submissions
-- `fx.historyFallback` — Handler for failed history navigations
-
-### Server Protocol
-
-Each request includes an `FX-Target` header containing the requested selectors. The server may return a complete document or only the requested fragments.
-
-## Non-Goals
-
-fx does not provide components, client-side routing, reactivity, global state management, or template systems. These omissions are deliberate.
-
-## Installation
-
-Copy `fx.js` into your project. No build step required.
-
-```text
-fx.js      — Core library (~300 lines)
-fx.dev.js  — Development helper (optional)
-```
-
-## Documentation
+## Install
 
 ```bash
-python -m http.server 8000
-open http://localhost:8000/docs/
+curl -O https://fx.ciuffolo.com/fx.js
 ```
+
+Copy it into your project. There is no package, no lockfile and no transitive dependency to
+audit, because there is nothing to depend on.
+
+`fx.dev.js` is an optional development companion: it turns on logging and warns about the
+mistakes that are otherwise silent — duplicate ids, a hungry element with no id, a target
+that matches nothing. Load it in development, never in production.
+
+## Go
+
+Optional. fx works with any server; this saves Go users writing the same twenty lines.
+
+```bash
+go get github.com/kilianc/fragment-exchange
+```
+
+```go
+import fx "github.com/kilianc/fragment-exchange"
+
+mux.Handle("GET /fx.js", fx.Handler())      // served from your binary
+
+func reports(w http.ResponseWriter, r *http.Request) {
+	page := ReportsPage{Filters: parseFilters(r)}
+
+	// True on any page load, and on a fragment request that named it.
+	if fx.Wants(r, "#results") {
+		page.Results = search(r)     // skipped when only the nav is being swapped
+	}
+
+	render(w, page)
+}
+```
+
+## Tests
+
+The suite is a web page, because fx is a few hundred lines of DOM, history and `fetch` and
+there is nothing worth testing outside a browser. A Go test serves the repository, opens
+the page in headless Chrome and waits for it to report back:
+
+```bash
+go test ./...
+```
+
+No Node, no test framework, nothing in `go.mod` for it. Set `FX_CHROME` to pick a browser,
+`FX_HEADED=1` to watch it run, or just open `fx.test.html` yourself.
+
+## Repository
+
+```text
+fx.js            the library
+fx.dev.js        development companion
+fx.go            Go package: embeds the script, answers the FX-Target header
+fx.test.js       the suite       fx.test.html   the page that runs it
+fx_test.go       drives Chrome   protocol_test.go
+web/             fx.ciuffolo.com, written in GSX and powered by fx
+cmd/server/      the site's binary, same one locally and in production
+```
+
+```bash
+make dev      # run the site on :8080
+make test     # everything
+make check    # what CI runs
+```
+
+The site is written in [GSX](https://github.com/kilianc/gsx) and served by a Go binary, so
+`.gsx` files are source and `.gsx.go` files are generated — run `make gen` after editing
+one.
 
 ## License
 
-MIT
+MIT © Kilian Ciuffolo

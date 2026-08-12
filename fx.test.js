@@ -1,7 +1,11 @@
 'use strict';
 
+// The tests run inside an iframe (see fx.test.html) because they rewrite
+// document.body and push history entries. Each one sets up a page, drives a
+// real event, and waits for the DOM to catch up.
+
 test('a[fx-target] navigates and updates fragments', async () => {
-  let { fetchResponses } = mockFetch(50, [
+  let { calls, fetchResponses } = mockFetch(50, [
     `
       <div id="status">
         updated
@@ -11,12 +15,15 @@ test('a[fx-target] navigates and updates fragments', async () => {
     `,
   ]);
 
-  setPageHTML('/initial', `
+  setPageHTML(
+    '/initial',
+    `
     <div id="status">initial</div>
     <div id="hungry" fx-hungry>hungry-initial</div>
     <a id="link" href="/next" fx-target="#status" fx-loading-target="#loader">go</a>
     <div id="loader">loader</div>
-  `);
+  `,
+  );
 
   document.getElementById('link').click();
 
@@ -25,22 +32,52 @@ test('a[fx-target] navigates and updates fragments', async () => {
   await waitForText('hungry-updated', '#hungry');
   assert(window._fxTestScript === 'ran', 'inline script not executed');
   assertClass('!fx-loading', '#loader');
+  assert(calls[0].options.headers['FX-Target'] === '#status', 'FX-Target header not sent', calls[0].options.headers['FX-Target']);
   assert(fetchResponses.length === 0, 'no fetch responses should be left', fetchResponses.length);
+});
+
+test('fx-target accepts a list of selectors', async () => {
+  mockFetch(10, [
+    `
+      <div id="one">one-updated</div>
+      <div id="two">two-updated</div>
+      <div id="three">three-updated</div>
+    `,
+  ]);
+
+  setPageHTML(
+    '/initial',
+    `
+    <div id="one">one</div>
+    <div id="two">two</div>
+    <div id="three">three</div>
+    <a id="link" href="/next" fx-target="#one, #two">go</a>
+  `,
+  );
+
+  document.getElementById('link').click();
+
+  await waitForText('one-updated', '#one');
+  await waitForText('two-updated', '#two');
+  assertText('three', '#three');
 });
 
 test('form[method="GET"][fx-target] submits and updates target', async () => {
   let { calls, fetchResponses } = mockFetch(20, [
-    '<div id="result">got<script>window._fxTestScript = "ran";</script></div>'
+    '<div id="result">got<script>window._fxTestScript = "ran";</script></div>',
   ]);
 
-  setPageHTML('/initial', `
+  setPageHTML(
+    '/initial',
+    `
     <div id="result">initial</div>
     <div id="loader">loader</div>
     <form id="form" action="/search" fx-target="#result" fx-loading-target="#loader">
       <input name="q" value="hello">
       <button type="submit">submit</button>
     </form>
-  `);
+  `,
+  );
 
   document.getElementById('form').requestSubmit();
 
@@ -60,14 +97,17 @@ test('form[method="POST"][fx-target] submits and updates target', async () => {
     '<div id="result">posted<script>window._fxPostScript = "ran-post";</script></div>',
   ]);
 
-  setPageHTML('/initial', `
+  setPageHTML(
+    '/initial',
+    `
     <div id="result">initial</div>
     <div id="loader">loader</div>
     <form id="form" action="/submit" method="POST" fx-target="#result" fx-loading-target="#loader">
       <input name="q" value="hello">
       <button type="submit">submit</button>
     </form>
-  `);
+  `,
+  );
 
   document.getElementById('form').requestSubmit();
 
@@ -79,8 +119,72 @@ test('form[method="POST"][fx-target] submits and updates target', async () => {
   let call = calls[0];
   assert(call.options.method === 'POST', 'method not POST', call.options.method);
   assert(!call.url.includes('q=hello'), 'query param leaked to URL', call.url);
+  assert(call.options.body instanceof URLSearchParams, 'body should be urlencoded, not multipart');
   assert(call.options.body.get('q') === 'hello', 'body missing q', call.options.body);
   assert(fetchResponses.length === 0, 'no fetch responses should be left', fetchResponses.length);
+});
+
+test('form with a file keeps multipart encoding', async () => {
+  let { calls } = mockFetch(10, ['<div id="result">uploaded</div>']);
+
+  setPageHTML(
+    '/initial',
+    `
+    <div id="result">initial</div>
+    <form id="form" action="/upload" method="POST" enctype="multipart/form-data" fx-target="#result">
+      <input type="file" name="doc">
+      <button type="submit">submit</button>
+    </form>
+  `,
+  );
+
+  document.getElementById('form').requestSubmit();
+
+  await waitForText('uploaded', '#result');
+  assert(calls[0].options.body instanceof FormData, 'body should stay FormData for multipart forms');
+});
+
+test('the submitter decides the action, the method and its own value', async () => {
+  let { calls } = mockFetch(10, ['<div id="result">deleted</div>']);
+
+  setPageHTML(
+    '/initial',
+    `
+    <div id="result">initial</div>
+    <form id="form" action="/save" method="GET" fx-target="#result">
+      <input name="id" value="7">
+      <button type="submit" name="op" value="save">save</button>
+      <button id="delete" type="submit" name="op" value="delete" formaction="/delete" formmethod="POST">delete</button>
+    </form>
+  `,
+  );
+
+  document.getElementById('delete').click();
+
+  await waitForText('deleted', '#result');
+
+  let call = calls[0];
+  assert(call.options.method === 'POST', 'formmethod ignored', call.options.method);
+  assert(call.url.includes('/delete'), 'formaction ignored', call.url);
+  assert(call.options.body.get('op') === 'delete', 'submitter value missing', call.options.body.get('op'));
+  assert(call.options.body.get('id') === '7', 'other fields missing');
+});
+
+test('a redirect replaces the url with where the server landed', async () => {
+  mockFetch(10, [{ html: '<div id="result">created</div>', redirectUrl: '/things/42' }]);
+
+  setPageHTML(
+    '/initial',
+    `
+    <div id="result">initial</div>
+    <a id="link" href="/things/new" fx-target="#result">go</a>
+  `,
+  );
+
+  document.getElementById('link').click();
+
+  await waitForText('created', '#result');
+  assertPathname('/things/42');
 });
 
 test('browser navigation restores fragments on popstate', async () => {
@@ -105,12 +209,15 @@ test('browser navigation restores fragments on popstate', async () => {
     `,
   ]);
 
-  setPageHTML('/initial',`
+  setPageHTML(
+    '/initial',
+    `
     <div id="content">
       <div id="title" fx-hungry>title initial</div>
       <a id="link-to-a" href="/page-a" fx-target="#content">link to a</a>
     </div>
-  `);
+  `,
+  );
 
   document.getElementById('link-to-a').click();
   await waitForText('title a', '#title');
@@ -141,16 +248,19 @@ test('meta[name="fx-refresh"][fx-interval] should poll and self-replace', async 
       <div id="poll-container">
         all-timers-disabled
       </div>
-    `
+    `,
   ]);
 
-  setPageHTML('/initial', `
+  setPageHTML(
+    '/initial',
+    `
     <meta id="meta-1" name="fx-refresh" fx-interval="50" fx-target="#poll-container">
     <meta id="meta-2" name="fx-refresh" fx-interval="55" fx-target="#poll-container">
     <div id="poll-container">
       poll-count=0
     </div>
-  `);
+  `,
+  );
 
   await waitForText('all-timers-disabled', '#poll-container');
   assert(fetchResponses.length === 0, 'no fetch responses should be left', fetchResponses.length);
@@ -164,10 +274,13 @@ test('meta[name="fx-refresh"][fx-interval] polling timers are cleared on url cha
     '<meta id="meta" name="fx-refresh" fx-hungry>',
   ]);
 
-  setPageHTML('/initial', `
+  setPageHTML(
+    '/initial',
+    `
     <meta id="meta" name="fx-refresh" fx-interval="100" fx-target="#nav">
     <a id="nav" href="/no" fx-target="#nav">nav</a>
-  `);
+  `,
+  );
 
   await waitForText('to-page-b', '#nav');
 
@@ -185,62 +298,131 @@ test('meta[name="fx-refresh"][fx-interval] polling timers are cleared on url cha
 
   await wait(250);
 
-  assert(calls.length === 4, 'fetch should have been called 3 times', calls.length);
+  assert(calls.length === 4, 'fetch should have been called 4 times', calls.length);
   assert(calls[0].url.includes('/initial'), 'fetch should have been called with /initial', calls[0].url);
-  assert(calls[1].url.includes('/page-a'), 'fetch should have been called with /page-b', calls[1].url);
-  assert(calls[2].url.includes('/page-b'), 'fetch should have been called with /page-b', calls[1].url);
+  assert(calls[1].url.includes('/page-a'), 'fetch should have been called with /page-a', calls[1].url);
+  assert(calls[2].url.includes('/page-b'), 'fetch should have been called with /page-b', calls[2].url);
   assert(calls[3].url.includes('/page-c'), 'fetch should have been called with /page-c', calls[3].url);
   assert(fetchResponses.length === 0, 'no fetch responses should be left', fetchResponses.length);
 });
 
 test('fetch errors are handled gracefully', async () => {
-  mockFetch(10, [
-    'error: Mock Server Error',
-    '<a id="nav" href="/no" fx-target="#nav">ok</a>',
-  ]);
+  mockFetch(10, ['error: Mock Server Error', '<a id="nav" href="/no" fx-target="#nav">ok</a>']);
 
-  setPageHTML('/initial', `
+  setPageHTML(
+    '/initial',
+    `
     <a id="nav" href="/no" fx-target="#nav">nav</a>
-  `);
+  `,
+  );
 
-  let clickFallback = fx.clickFallback;
+  let called = false;
   fx.clickFallback = () => {
-    fx.clickFallback = clickFallback;
+    called = true;
   };
 
   document.getElementById('nav').click();
+  await waitUntil(() => called, 'clickFallback was never called');
+
+  // The url was pushed optimistically before the request; a failure has to put
+  // it back, or the address bar describes a page that was never rendered.
+  assertPathname('/initial');
+
+  fx.clickFallback = ORIGINAL_FALLBACKS.clickFallback;
   document.getElementById('nav').click();
   await waitForText('ok', '#nav');
-  assert(fx.clickFallback === clickFallback, 'fallback should have been called', fx.clickFallback);
 });
 
 test('fetch timeouts are handled gracefully', async () => {
-  mockFetch(60, [
-    '<a id="nav" href="/no" fx-target="#nav">ok</a>',
-  ]);
+  mockFetch(60, ['<a id="nav" href="/no" fx-target="#nav">ok</a>']);
 
-  setPageHTML('/initial', `
+  setPageHTML(
+    '/initial',
+    `
     <a id="nav" href="/no" fx-target="#nav">nav</a>
-  `);
+  `,
+  );
 
-  let clickFallback = fx.clickFallback;
+  let called = false;
   fx.clickFallback = () => {
-    fx.clickFallback = clickFallback;
+    called = true;
   };
 
   fx.timeout = '50';
   document.getElementById('nav').click();
-  await wait(70);
-  assert(fx.clickFallback === clickFallback, 'fallback should have been called', fx.clickFallback);
+  await waitUntil(() => called, 'clickFallback was never called on timeout');
 
-  fx.timeout = 70;
+  fx.clickFallback = ORIGINAL_FALLBACKS.clickFallback;
+  fx.timeout = 500;
   document.getElementById('nav').click();
   await waitForText('ok', '#nav');
 });
 
+test('a failing form hands the submission back to the browser', async () => {
+  mockFetch(10, ['error: Mock Server Error']);
+
+  setPageHTML(
+    '/initial',
+    `
+    <div id="result">initial</div>
+    <form id="form" action="/submit" method="POST" fx-target="#result">
+      <button type="submit">submit</button>
+    </form>
+  `,
+  );
+
+  let submitted = null;
+  fx.submitFallback = (form) => {
+    submitted = form;
+  };
+
+  document.getElementById('form').requestSubmit();
+  await waitUntil(() => submitted !== null, 'submitFallback was never called');
+  assert(submitted.id === 'form', 'submitFallback got the wrong form', submitted.id);
+
+  // The button has to come back, or a failed submit leaves a dead form.
+  assert(!document.querySelector('#form button').disabled, 'submit button left disabled');
+});
+
+test('clicks the browser should keep are left alone', async () => {
+  let { calls } = mockFetch(10, []);
+
+  setPageHTML(
+    '/initial',
+    `
+    <a id="modified" href="/no" fx-target="#modified">modified</a>
+    <a id="blank" href="/no" target="_blank" fx-target="#blank">new tab</a>
+    <a id="download" href="/no" download fx-target="#download">download</a>
+  `,
+  );
+
+  // fx registered its listener at load, so this one runs after it and can both
+  // read what fx decided and stop the browser from really navigating.
+  let prevented = [];
+  let spy = (event) => {
+    prevented.push(event.defaultPrevented);
+    event.preventDefault();
+  };
+  document.addEventListener('click', spy);
+
+  document.getElementById('modified').dispatchEvent(
+    new MouseEvent('click', { bubbles: true, cancelable: true, metaKey: true }),
+  );
+  document.getElementById('blank').dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+  document.getElementById('download').dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+
+  await wait(30);
+  document.removeEventListener('click', spy);
+
+  assert(prevented.join() === 'false,false,false', 'fx hijacked a click it should have ignored', prevented.join());
+  assert(calls.length === 0, 'fx fetched for a click it should have ignored', calls.length);
+});
+
+// --- harness ------------------------------------------------------------
+
 function assert(condition, message, value) {
   if (!condition) {
-    throw new Error(`${message} ${value ? `(${value})` : ''}`);
+    throw new Error(`${message}${value === undefined ? '' : ` (${value})`}`);
   }
 }
 
@@ -275,26 +457,31 @@ function assertText(text, selector) {
 
 function assertPathname(pathname) {
   if (window.location.pathname !== pathname) {
-    throw new Error(
-      `assertPathname: pathname "${pathname}" not found, current pathname is ${window.location.pathname}`,
-    );
+    throw new Error(`assertPathname: expected "${pathname}", got "${window.location.pathname}"`);
   }
 }
 
 async function waitForText(text, selector) {
-  for (let i = 0; i < 100; i++) {
-    let element = document.querySelector(selector);
-    if (element.textContent.includes(text)) return;
-    await wait(50);
-  }
+  await waitUntil(
+    () => document.querySelector(selector)?.textContent.includes(text),
+    `timed out waiting for "${text}" in ${selector}`,
+  );
+}
 
-  throw new Error(`waitFor: timed out waiting for "${text}" in ${selector}`);
+async function waitUntil(predicate, message) {
+  for (let i = 0; i < 100; i++) {
+    if (predicate()) return;
+    await wait(25);
+  }
+  throw new Error(`waitUntil: ${message}`);
 }
 
 function wait(ms = 50) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+// mockFetch replaces window.fetch with a queue. A response is either an HTML
+// string, "error: message" for a 500, or { html, redirectUrl, status }.
 function mockFetch(delayMs, responses) {
   let fetchResponses = responses;
   let calls = [];
@@ -305,29 +492,32 @@ function mockFetch(delayMs, responses) {
     calls.push({ url, options });
 
     if (options?.signal?.aborted) {
-      throw new DOMException(options.signal.reason, 'AbortError');
+      throw options.signal.reason;
     }
 
     await wait(delayMs);
 
     if (options?.signal?.aborted) {
-      throw new DOMException(options.signal.reason, 'AbortError');
+      throw options.signal.reason;
     }
 
     let response = fetchResponses.shift();
     assert(response, 'no response configured for fetch at index ' + calls.length);
 
-    if (response.startsWith('error:')) {
-      return {
-        ok: false,
-        status: 500,
-        text: async () => response.slice(7),
-      };
+    if (typeof response === 'string' && response.startsWith('error:')) {
+      return { ok: false, status: 500, url, redirected: false, text: async () => response.slice(7) };
+    }
+
+    if (typeof response === 'string') {
+      return { ok: true, status: 200, url, redirected: false, text: async () => response };
     }
 
     return {
-      ok: true,
-      text: async () => response,
+      ok: response.status ? response.status < 400 : true,
+      status: response.status || 200,
+      url: response.redirectUrl || url,
+      redirected: Boolean(response.redirectUrl),
+      text: async () => response.html || '',
     };
   };
 
@@ -335,7 +525,7 @@ function mockFetch(delayMs, responses) {
 }
 
 function restoreFetch() {
-  window.fetch = window._fetch;
+  if (window._fetch) window.fetch = window._fetch;
   window._fetch = undefined;
 }
 
@@ -352,83 +542,62 @@ function test(name, fn) {
   globalThis.tests.push({ name, fn });
 }
 
-let originalPathname = window.location.pathname;
-let originalUrl = window.location.href;
+let ORIGINAL_PATHNAME = window.location.pathname;
+let ORIGINAL_FALLBACKS = {
+  clickFallback: fx.clickFallback,
+  submitFallback: fx.submitFallback,
+  historyFallback: fx.historyFallback,
+};
 
 function reset() {
-  history.replaceState(null, '', originalPathname);
-  setPageHTML(originalPathname);
+  history.replaceState(null, '', ORIGINAL_PATHNAME);
+  setPageHTML(ORIGINAL_PATHNAME);
   restoreFetch();
+  Object.assign(fx, ORIGINAL_FALLBACKS);
+  fx.timeout = undefined;
   window._fxTestScript = undefined;
+  window._fxPostScript = undefined;
 }
 
+// runTests runs every test, keeps going after a failure, and returns a plain
+// object — fx.test.html hands that to the Go test runner.
 async function runTests() {
-  let originalUrl = window.location.href;
-  let logPassed = fx.createLogFunction('#22c55e');
-  let logFailed = fx.createLogFunction('#dc2626');
-  let logSkipped = fx.createLogFunction('#6b7280');
+  let started = performance.now();
 
-  let passedTests = [];
-  let failedTests = [];
-  let skippedTests = [];
-  let onlyTests = [];
+  let passed = [];
+  let failed = [];
+  let skipped = [];
 
-  if (!globalThis.tests) {
-    globalThis.tests = [];
+  if (!globalThis.tests) globalThis.tests = [];
+
+  let only = globalThis.tests.filter((t) => t.name.startsWith('only:'));
+  let selected = only.length > 0 ? only : globalThis.tests;
+  if (only.length > 0) {
+    skipped.push(...globalThis.tests.filter((t) => !t.name.startsWith('only:')).map((t) => t.name));
   }
 
-  for (let test of globalThis.tests) {
-    if (test.name.startsWith('only:')) {
-      onlyTests.push(test);
-    } else {
-      skippedTests.push(test);
-    }
-  }
-
-  if (onlyTests.length > 0) {
-    globalThis.tests = onlyTests;
-  } else {
-    skippedTests = [];
-  }
-
-  for (let test of globalThis.tests) {
+  for (let test of selected) {
     if (test.name.startsWith('skip:')) {
-      skippedTests.push(test);
+      skipped.push(test.name);
       continue;
     }
 
+    let testStarted = performance.now();
     try {
       await test.fn();
-      reset();
-      passedTests.push(test);
+      passed.push({ name: test.name, durationMs: Math.round(performance.now() - testStarted) });
     } catch (err) {
-      failedTests.push(test);
-      console.error(err);
-      break;
+      failed.push({ name: test.name, error: err.message, stack: err.stack });
+      console.error(`fx test failed: ${test.name}`, err);
     }
+    reset();
   }
 
-  history.replaceState(null, '', originalUrl);
-
-  if (failedTests.length === 0 && onlyTests.length === 0) {
-    console.clear();
-  }
-
-  for (let test of skippedTests) {
-    logSkipped(`test: ${test.name} skipped`);
-  }
-
-  for (let test of passedTests) {
-    logPassed(`test: ${test.name} passed`);
-  }
-
-  for (let test of failedTests) {
-    logFailed(`test: ${test.name} failed`);
-  }
-
-  if (failedTests.length === 0) {
-    logPassed(`all ${passedTests.length} tests passed`);
-  } else {
-    logFailed(`${failedTests.length} tests failed`);
-  }
+  return {
+    passed,
+    failed,
+    skipped,
+    only: only.length > 0,
+    durationMs: Math.round(performance.now() - started),
+  };
 }

@@ -1,12 +1,37 @@
-// fx - Fragment eXchange library for SSR apps
-// Instant URL updates, fragment swapping, and progressive enhancement
-// 2025-12-04
+// fx — Fragment eXchange
+// Fragment navigation for server-rendered applications.
+// https://fx.ciuffolo.com — MIT
 
 window.fx = (() => {
+  // Every in-flight fetch, so a new navigation can cancel the ones it made stale.
+  let NAV_ABORT_CONTROLLERS_SET = new Set();
+
+  // Aborts carry an Error so they can be told apart from a real failure: an
+  // FxError means "we cancelled this on purpose, stay quiet", anything else
+  // reaches the fallback and puts the browser back in charge.
+  function error(message, name = 'FxError') {
+    let err = new Error(message);
+    err.name = name;
+    return err;
+  }
+
+  function cancelAllFetches() {
+    for (let controller of NAV_ABORT_CONTROLLERS_SET.values()) {
+      controller.abort(error('url changed'));
+    }
+
+    NAV_ABORT_CONTROLLERS_SET.clear();
+  }
+
   function fetchWithAbort({ url, method = 'GET', body, targetSelectors = '', abortController }) {
     let timeoutMs = parseInt(fx.timeout, 10) || 10_000;
     let controller = abortController || new AbortController();
-    let timeout = setTimeout(() => controller.abort(`fetch timeout after ${timeoutMs}ms`), timeoutMs);
+    let timeout = setTimeout(
+      () => controller.abort(error(`fetch timeout after ${timeoutMs}ms`, 'FxTimeoutError')),
+      timeoutMs,
+    );
+
+    NAV_ABORT_CONTROLLERS_SET.add(controller);
 
     return fetch(url, {
       method,
@@ -15,13 +40,17 @@ window.fx = (() => {
       headers: { 'FX-Target': targetSelectors || '' },
     })
       .then((r) => {
+        let redirectUrl = r.redirected ? r.url : null;
         return r.ok
-          ? r.text()
+          ? r.text().then((text) => ({ htmlText: text, redirectUrl }))
           : r.text().then((text) => {
               throw new Error(`HTTP ${r.status}: ${text}`);
             });
       })
-      .finally(() => clearTimeout(timeout));
+      .finally(() => {
+        clearTimeout(timeout);
+        NAV_ABORT_CONTROLLERS_SET.delete(controller);
+      });
   }
 
   async function runFxNavigation({
@@ -45,13 +74,20 @@ window.fx = (() => {
       loadingElements.forEach((el) => el.classList.add('fx-loading'));
     }
 
-    if (pushHistory && url !== window.location.href) {
+    let originalUrl = window.location.href;
+    if (pushHistory && url !== originalUrl) {
       cancelAllTimers();
+      cancelAllFetches();
+
+      // The entry we are leaving may have no state at all — a full page load
+      // never sets any. Stamp it before pushing, so going back knows what to
+      // swap instead of falling back to a reload.
+      history.replaceState({ targetSelectors, loadingSelectors }, '');
       history.pushState({ targetSelectors, loadingSelectors }, '', url);
     }
 
     try {
-      let htmlText = await fetchWithAbort({
+      let { htmlText, redirectUrl } = await fetchWithAbort({
         url,
         method,
         body,
@@ -63,16 +99,27 @@ window.fx = (() => {
       updateFragments(targets, htmlText);
       setupMetaRefresh();
 
+      if (redirectUrl) {
+        history.replaceState({ targetSelectors, loadingSelectors }, '', redirectUrl);
+        fx.logDebug(`Navigation(${label}): redirected to`, redirectUrl);
+      }
+
       let duration = Math.round(performance.now() - startTime);
-      fx.logInfo(`Navigation(${label}): complete in ${duration}ms`, url);
+      fx.logInfo(`Navigation(${label}): complete in ${duration}ms`, redirectUrl || url);
     } catch (err) {
-      if (err.name === 'AbortError' && abortController?.signal?.reason?.startsWith('[graceful]')) {
-        fx.logDebug(`Navigation(${label}): fetch aborted:`, abortController.signal.reason);
+      if (err.name === 'FxError') {
+        fx.logDebug(`Navigation(${label}): fetch aborted:`, err.message);
         return;
       }
 
       fx.logError(`Navigation(${label}): failed:`, url, err.message);
-      console.error(err);
+
+      // The URL was optimistically updated before the fetch. Put it back, so
+      // the fallback starts from the address the user is actually looking at.
+      if (pushHistory) {
+        history.replaceState(null, '', originalUrl);
+      }
+
       fallback?.(url, err);
     } finally {
       loadingElements.forEach((el) => el.classList.remove('fx-loading'));
@@ -100,7 +147,7 @@ window.fx = (() => {
   function cancelAllTimers() {
     for (let entry of REFRESH_TIMERS_MAP.values()) {
       clearTimeout(entry.timer);
-      entry.abortController.abort('[graceful] url changed');
+      entry.abortController.abort(error('url changed'));
     }
     REFRESH_TIMERS_MAP.clear();
     fx.logDebug('Polling: cancelled all timers');
@@ -111,7 +158,7 @@ window.fx = (() => {
       if (document.contains(el)) continue;
 
       clearTimeout(entry.timer);
-      entry.abortController.abort('[graceful] element removed from dom');
+      entry.abortController.abort(error('element removed from dom'));
       REFRESH_TIMERS_MAP.delete(el);
 
       fx.logDebug(`Polling[${el.id}]: removed timer, element no longer in dom`);
@@ -130,6 +177,7 @@ window.fx = (() => {
       let url = window.location.href;
       let targetSelectors = el.getAttribute('fx-target');
       if (!targetSelectors) continue;
+      let loadingSelectors = el.getAttribute('fx-loading-target');
       let abortController = new AbortController();
 
       fx.logDebug(`Polling[${el.id}]: added timer for ${interval}ms for ${targetSelectors}`);
@@ -145,6 +193,7 @@ window.fx = (() => {
         await runFxNavigation({
           url,
           targetSelectors,
+          loadingSelectors,
           pushHistory: false,
           label: `fx-refresh[${el.id}]`,
           abortController,
@@ -163,8 +212,7 @@ window.fx = (() => {
 
   function updateFragments(targetSelectors, htmlText) {
     let newDocument = new DOMParser().parseFromString(htmlText, 'text/html');
-
-    window.fx.__dev_mode__validateDom?.(newDocument);
+    fx.__dev_mode__validateDom?.(newDocument);
 
     let hungryElements = newDocument.querySelectorAll('[fx-hungry]');
     for (let el of hungryElements) {
@@ -173,33 +221,90 @@ window.fx = (() => {
     }
 
     let uniqueTargetSelectors = [...new Set(targetSelectors)];
+    fx.logDebug(
+      `updateFragments: ${uniqueTargetSelectors.length} unique target selectors: [${uniqueTargetSelectors.join(', ')}]`,
+    );
 
     for (let selector of uniqueTargetSelectors) {
       let oldElement = document.querySelector(selector);
-      if (!oldElement) continue;
+      if (!oldElement) {
+        fx.logWarn('Target not in the current page, skipping:', selector);
+        continue;
+      }
 
       let newElement = newDocument.querySelector(selector);
-      if (!newElement) continue;
+      if (!newElement) {
+        fx.logWarn('Target not in the response, skipping:', selector);
+        continue;
+      }
+
+      // Save scroll positions by index. A scrolled table inside a fragment is
+      // common enough that losing it on every poll is unusable; matching by
+      // index is crude, and it is right whenever the shape did not change.
+      let scrolls = [];
+      let all = oldElement.querySelectorAll('*');
+      for (let i = 0; i < all.length; i++) {
+        if (all[i].scrollTop || all[i].scrollLeft) {
+          scrolls.push([i, all[i].scrollTop, all[i].scrollLeft]);
+        }
+      }
 
       oldElement.replaceWith(newElement);
 
-      let scripts = newElement.querySelectorAll('script');
-      for (let script of scripts) {
-        fx.logDebug('Run script:', script);
-        let attributes = script.attributes;
-        let newScript = document.createElement('script');
-        for (let attribute of attributes) {
-          newScript.setAttribute(attribute.name, attribute.value);
+      let newAll = newElement.querySelectorAll('*');
+      for (let [i, top, left] of scrolls) {
+        if (newAll[i]) {
+          newAll[i].scrollTop = top;
+          newAll[i].scrollLeft = left;
         }
-        newScript.textContent = script.textContent;
-        script.replaceWith(newScript);
       }
+
+      runScripts(newElement.querySelectorAll('script')).catch((err) => {
+        fx.logError(`Script error in ${selector}:`, err.message);
+        console.error(err);
+      });
+    }
+  }
+
+  // Scripts inserted by innerHTML/replaceWith never run. Re-create them so they
+  // do, one after another, so a fragment can load a library and then use it.
+  async function runScripts(scripts) {
+    for (let script of scripts) {
+      let attributes = script.attributes;
+      let isExternal = script.src;
+
+      let newScript = document.createElement('script');
+      newScript.async = false;
+
+      for (let attribute of attributes) {
+        newScript.setAttribute(attribute.name, attribute.value);
+      }
+
+      await new Promise((resolve, reject) => {
+        if (!isExternal) {
+          newScript.textContent = script.textContent;
+          script.replaceWith(newScript);
+          resolve();
+          return;
+        }
+
+        newScript.onload = resolve;
+        newScript.onerror = () => reject(error(`failed to load ${newScript.src}`, 'FxScriptError'));
+        script.replaceWith(newScript);
+      });
     }
   }
 
   async function handleClick(event) {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
     let link = event.target.closest('a[href][fx-target]');
-    if (!link || event.metaKey || event.ctrlKey || event.shiftKey) return;
+    if (!link) return;
+
+    // Leave the browser alone when it is being asked to do something other
+    // than navigate this tab.
+    if (link.hasAttribute('download')) return;
+    if (link.target && link.target !== '_self') return;
 
     event.preventDefault();
     fx.logDebug('Click:', link);
@@ -225,20 +330,33 @@ window.fx = (() => {
     fx.logDebug(`Submit:`, form);
     event.preventDefault();
 
-    let url = form.action || window.location.href;
+    let submitter = event.submitter;
+    let url = submitter?.getAttribute('formaction') || form.action || window.location.href;
     let targetSelectors = form.getAttribute('fx-target');
     let loadingSelectors = form.getAttribute('fx-loading-target');
-    let method = (form.method || 'GET').toUpperCase();
+    let method = (submitter?.getAttribute('formmethod') || form.method || 'GET').toUpperCase();
     let body = new FormData(form);
 
-    let submitButton = form.querySelector('button[type="submit"], input[type="submit"]');
+    // A submit button's own name/value is part of the submission, and only the
+    // button that was actually pressed.
+    if (submitter && submitter.name) {
+      body.append(submitter.name, submitter.value || '');
+    }
+
+    let submitButton = submitter || form.querySelector('button[type="submit"], input[type="submit"]');
     if (submitButton) {
       submitButton.disabled = true;
+      submitButton.classList.add('fx-loading');
     }
 
     if (method === 'GET') {
       url = `${url}?${new URLSearchParams(body)}`;
       body = null;
+    } else if (!isMultipart(form)) {
+      // Same choice a browser makes: urlencoded unless there is a file to send.
+      // Handed to fetch as FormData it would go out as multipart, which most
+      // server-side form parsers do not read by default.
+      body = new URLSearchParams(body);
     }
 
     await runFxNavigation({
@@ -249,21 +367,29 @@ window.fx = (() => {
       loadingSelectors,
       pushHistory: true,
       label: 'submit',
-      fallback: fx.submitFallback,
+      fallback: (failedUrl, err) => fx.submitFallback(form, failedUrl, err),
     });
 
     if (submitButton) {
       submitButton.disabled = false;
+      submitButton.classList.remove('fx-loading');
     }
+  }
+
+  function isMultipart(form) {
+    if (form.enctype === 'multipart/form-data') return true;
+    return Array.from(form.elements).some((el) => el.type === 'file' && el.files?.length);
   }
 
   let noop = () => {};
 
+  // The fallbacks are the whole safety story: when fx cannot do its job, it
+  // hands the navigation back to the browser, which has always known how.
   let clickFallback = (url) => {
-    window.location.href = url;
+    window.location.replace(url);
   };
 
-  let submitFallback = () => {
+  let submitFallback = (form) => {
     form.submit();
   };
 
@@ -272,7 +398,7 @@ window.fx = (() => {
   };
 
   let fx = {
-    version: '0.1.0',
+    version: '1.0.0',
     logInfo: noop,
     logDebug: noop,
     logWarn: noop,
@@ -291,6 +417,9 @@ window.fx = (() => {
 
     let targetSelectors = event.state?.targetSelectors;
     let loadingSelectors = event.state?.loadingSelectors;
+
+    cancelAllTimers();
+    cancelAllFetches();
 
     await runFxNavigation({
       url: window.location.href,
