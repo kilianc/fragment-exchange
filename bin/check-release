@@ -186,6 +186,21 @@ if $check_cdn; then
     if [ "$code" != "200" ]; then
       fail "$url returned HTTP $code"
       printf '        %s\n' "$(head -c 200 "$body")" >&2
+
+      # jsDelivr's own message says only that it could not read the repository,
+      # which looks like a bad tag. Ask GitHub anonymously — the way jsDelivr
+      # does — so the far more likely cause names itself.
+      slug=$(printf '%s' "$url" | sed -n 's|.*/gh/\([^/@]*/[^/@]*\)@.*|\1|p')
+
+      if [ -n "$slug" ]; then
+        seen=$(curl -sS -o /dev/null -w '%{http_code}' "https://api.github.com/repos/$slug" || echo 000)
+
+        if [ "$seen" = "404" ]; then
+          printf '        %s is private to anonymous callers. jsDelivr can only\n' "$slug" >&2
+          printf '        serve public repositories, so no tag of it will ever resolve.\n' >&2
+          printf '        Publish the repository, or stop publishing CDN URLs for it.\n' >&2
+        fi
+      fi
     elif [ ! -f "$subject" ]; then
       fail "$url serves $subject, which is not in this repository"
     elif cmp -s "$body" "$subject"; then
