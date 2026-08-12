@@ -155,6 +155,29 @@ The site is written in [GSX](https://github.com/kilianc/gsx) and served by a Go 
 `.gsx` files are source and `.gsx.go` files are generated — run `make gen` after editing
 one.
 
+## Deploying the site
+
+`fx.ciuffolo.com` is `cmd/server` on Vercel's Go preset: an ordinary `net/http` server
+listening on `$PORT`. Same binary locally and in production — there is no serverless shim
+and nothing that only exists in one environment.
+
+`vercel.json` is the entire configuration:
+
+```json
+{ "framework": "go" }
+```
+
+Generated `.gsx.go` files are committed, so the build is a plain `go build` with no
+toolchain beyond Go itself. First-time setup, in the Vercel dashboard:
+
+1. **Add New → Project**, import `kilianc/fragment-exchange` (grant access to the private
+   repo when prompted).
+2. Leave every build setting alone — the framework preset comes from `vercel.json`.
+3. **Settings → Domains**, add `fx.ciuffolo.com`, then add the `CNAME` Vercel gives you to
+   the `ciuffolo.com` DNS.
+
+After that, pushing to `main` deploys.
+
 ## License
 
 MIT © Kilian Ciuffolo
