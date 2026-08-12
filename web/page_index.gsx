@@ -2,12 +2,12 @@ package web
 
 func IndexPage() Page {
 	return Page{
-		Slug:     "",
-		Nav:      "Overview",
+		Slug:    "",
+		Nav:     "Overview",
 		Title:   "fx — Fragment eXchange",
 		Tagline: "No build step. No client state. Just your server.",
 		Lede:    "Fragment navigation for server-rendered applications. Every filter, every open pane, every sort order lives in the URL; your server reads it and renders HTML, the way it always has, and fx swaps the fragment that changed. One attribute, about 400 lines, nothing to install.",
-		Body:     indexBody,
+		Body:    indexBody,
 	}
 }
 
