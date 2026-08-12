@@ -60,8 +60,12 @@
         });
       } else {
         runTests().then((results) => {
-          // sendBeacon is not the fetch the tests mock, so the Go runner hears
-          // about the results even if a test left the mock installed.
+          // The results are published three ways so the page does not care what
+          // is driving it: a global for anything using CDP or WebDriver, a
+          // beacon for the Go runner, and a message for the frame around it.
+          // sendBeacon specifically because it is not the fetch the tests mock.
+          window.__fxResults = results;
+          window.top.__fxResults = results;
           if (navigator.sendBeacon) {
             navigator.sendBeacon('/__fx_results', JSON.stringify(results));
           }
