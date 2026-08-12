@@ -59,7 +59,7 @@ func Layout(c *Ctx) Node {
 							html.Href("/"),
 							Attr("fx-target", "#content"),
 							Attr("fx-loading-target", "#progress-bar"),
-							html.Span(html.Class("mark"), Text("𝑓")),
+							Mark(),
 							Text("fragment exchange"),
 						),
 						Nav(c),
@@ -140,11 +140,35 @@ func Footer() Node {
 	)
 }
 
+// Mark is the bolt from the favicon and the README logo, inline so the header,
+// the tab icon and the wordmark in assets/ are all the same drawing.
+func Mark() Node {
+	return html.SVG(
+		html.Class("mark"),
+		Attr("viewBox", "0 0 32 32"),
+		html.Width("22"),
+		html.Height("22"),
+		Attr("aria-hidden", "true"),
+		El(
+			"rect",
+			html.Width("32"),
+			html.Height("32"),
+			Attr("rx", "8"),
+			Attr("fill", "currentColor"),
+		),
+		El(
+			"path",
+			Attr("d", "M18 5 L9 18 h5 l-2 9 l9 -13 h-5 z"),
+			Attr("fill", "var(--accent-fg)"),
+		),
+	)
+}
+
 // A lightning bolt in a rounded square, as a data URI. One less request, and
 // no binary in the repository.
 const favicon = "data:image/svg+xml," +
 	"%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E" +
-	"%3Crect width='32' height='32' rx='8' fill='%234f46e5'/%3E" +
+	"%3Crect width='32' height='32' rx='8' fill='%232563eb'/%3E" +
 	"%3Cpath d='M18 5 L9 18 h5 l-2 9 9-13 h-5 z' fill='white'/%3E%3C/svg%3E"
 
 func isProduction() bool {

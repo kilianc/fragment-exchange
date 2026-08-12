@@ -51,3 +51,11 @@ build: gen ## Build the site binary
 .PHONY: tools
 tools: ## Install the GSX compiler
 	go install github.com/kilianc/gsx/cmd/gsx@latest
+
+.PHONY: tools-image
+tools-image: ## Build the pinned Node toolchain image (Vercel CLI)
+	docker build -t fragment-exchange-tools tools/
+
+.PHONY: deploy
+deploy: check ## Deploy the site to production via the containerised Vercel CLI
+	bin/vercel deploy --prod

@@ -1,4 +1,9 @@
-<h1 align="center">fx — Fragment eXchange</h1>
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/fx-logo-dark.svg" />
+    <img src="assets/fx-logo.svg" alt="fx — Fragment eXchange" width="420" />
+  </picture>
+</p>
 
 <p align="center">
   <strong>Your server already knows how to render the page.<br />
@@ -156,9 +161,9 @@ one.
 
 ## Deploying the site
 
-`fx.ciuffolo.com` is `cmd/server` on Vercel's Go preset: an ordinary `net/http` server
-listening on `$PORT`. Same binary locally and in production — there is no serverless shim
-and nothing that only exists in one environment.
+[fx.ciuffolo.com](https://fx.ciuffolo.com) is `cmd/server` on Vercel's Go preset: an
+ordinary `net/http` server listening on `$PORT`. Same binary locally and in production —
+no serverless shim, nothing that only exists in one environment.
 
 `vercel.json` is the entire configuration:
 
@@ -166,16 +171,21 @@ and nothing that only exists in one environment.
 { "framework": "go" }
 ```
 
-Generated `.gsx.go` files are committed, so the build is a plain `go build` with no
-toolchain beyond Go itself. First-time setup, in the Vercel dashboard:
+Generated `.gsx.go` files are committed, so the build is a plain `go build` needing no
+toolchain beyond Go. The project is connected to this repository, so pushing to `main`
+deploys.
 
-1. **Add New → Project**, import `kilianc/fragment-exchange` (grant access to the private
-   repo when prompted).
-2. Leave every build setting alone — the framework preset comes from `vercel.json`.
-3. **Settings → Domains**, add `fx.ciuffolo.com`, then add the `CNAME` Vercel gives you to
-   the `ciuffolo.com` DNS.
+For anything the dashboard cannot do, the Vercel CLI runs from a container:
 
-After that, pushing to `main` deploys.
+```bash
+bin/vercel deploy --prod
+```
+
+There is no Node on this machine and there is not going to be. `tools/Dockerfile` pins the
+toolchain — Node 22.12.0, Vercel CLI 58.9.4 — and `bin/vercel` mounts exactly two things
+into it: this repository, and `.vercel-auth/` for the CLI's own credentials. Not `$HOME`,
+not `~/.ssh`, not `~/.aws`. `make tools-image` rebuilds it; the wrapper does it for you on
+first use.
 
 ## License
 

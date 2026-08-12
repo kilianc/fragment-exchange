@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+#
+# Run the Vercel CLI out of the project's pinned tools image.
+#
+# There is no Node on this host and there is not going to be. Everything the
+# CLI can touch is what is mounted: this repository, and a directory holding
+# its own credentials. Not $HOME, not ~/.ssh, not ~/.aws.
+#
+#   bin/vercel login
+#   bin/vercel link
+#   bin/vercel deploy --prod
+set -euo pipefail
+
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# Fixed, so a git worktree does not get an image of its own.
+image="fragment-exchange-tools"
+auth="$root/.vercel-auth"
+
+if ! docker image inspect "$image" >/dev/null 2>&1; then
+  echo "bin/vercel: building $image (first run only)…" >&2
+  docker build -q -t "$image" "$root/tools" >&2
+fi
+
+mkdir -p "$auth"
+
+# --global-config keeps the credential in the project directory rather than in
+# a home directory the container should not be able to see.
+exec docker run --rm -i \
+  -u "$(id -u):$(id -g)" \
+  -e HOME=/auth \
+  -v "$root:/work" \
+  -v "$auth:/auth" \
+  -w /work \
+  "$image" \
+  vercel --global-config /auth "$@"

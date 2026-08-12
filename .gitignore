@@ -1,4 +1,6 @@
-bin/
+# Build output. bin/vercel is a checked-in script, not a build artefact.
+bin/server
+
 .DS_Store
 *.log
 .vercel/
@@ -6,3 +8,6 @@ bin/
 # Raw notes: mine, not the repository's.
 reflextion.md
 *.notes.md
+
+# Vercel CLI credentials, written by bin/vercel. Never commit these.
+.vercel-auth/

@@ -46,7 +46,7 @@ func Layout(c *Ctx) Node {
 					<header class="top">
 						<div class="top-inner">
 							<a class="brand" href="/" fx-target="#content" fx-loading-target="#progress-bar">
-								<span class="mark">𝑓</span>
+								{Mark()}
 								fragment exchange
 							</a>
 							{Nav(c)}
@@ -119,11 +119,22 @@ func Footer() Node {
 	)
 }
 
+// Mark is the bolt from the favicon and the README logo, inline so the header,
+// the tab icon and the wordmark in assets/ are all the same drawing.
+func Mark() Node {
+	return (
+		<svg class="mark" viewBox="0 0 32 32" width="22" height="22" aria-hidden="true">
+			<rect width="32" height="32" rx="8" fill="currentColor" />
+			<path d="M18 5 L9 18 h5 l-2 9 l9 -13 h-5 z" fill="var(--accent-fg)" />
+		</svg>
+	)
+}
+
 // A lightning bolt in a rounded square, as a data URI. One less request, and
 // no binary in the repository.
 const favicon = "data:image/svg+xml," +
 	"%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E" +
-	"%3Crect width='32' height='32' rx='8' fill='%234f46e5'/%3E" +
+	"%3Crect width='32' height='32' rx='8' fill='%232563eb'/%3E" +
 	"%3Cpath d='M18 5 L9 18 h5 l-2 9 9-13 h-5 z' fill='white'/%3E%3C/svg%3E"
 
 func isProduction() bool {

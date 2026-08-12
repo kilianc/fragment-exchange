@@ -20,9 +20,11 @@ const stylesheet = `
   --fg-faint: #8f8f9c;
   --border: #e4e4de;
   --border-strong: #d2d2ca;
-  --accent: #4f46e5;
+  /* The blue fx.dev.js prints its log badge in. The accent on the page and
+     the accent in your console are the same colour on purpose. */
+  --accent: #2563eb;
   --accent-fg: #ffffff;
-  --accent-soft: #eeecfd;
+  --accent-soft: #e9effd;
   --ok: #0f7a52;
   --warn: #a35700;
   --bad: #b42318;
@@ -32,7 +34,7 @@ const stylesheet = `
   --hl-keyword: #8b3fa8;
   --hl-tag: #b42318;
   --hl-attr: #a35700;
-  --hl-fx: #4f46e5;
+  --hl-fx: #2563eb;
   --hl-number: #a35700;
 
   --radius: 10px;
@@ -124,14 +126,9 @@ header.top {
 }
 .brand:hover { text-decoration: none; }
 .brand .mark {
-  display: inline-grid;
-  place-items: center;
+  display: block;
   width: 22px; height: 22px;
-  border-radius: 6px;
-  background: var(--accent);
-  color: var(--accent-fg);
-  font-size: 12px;
-  font-style: italic;
+  color: var(--accent);
 }
 
 nav.primary { display: flex; gap: 2px; margin-left: auto; flex-wrap: wrap; }
