@@ -416,19 +416,23 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
 
 .hook { margin: 0 0 6px; }
 
-.k-kicker { fill: var(--fg-faint); font: 600 11px var(--mono); letter-spacing: 0.11em; }
+/* The sheet the base scene sits on, and the boxes on it. The boxes are white
+   so they read as objects; the sheet is the page colour so it reads as ground. */
+.k-sheet      { fill: var(--bg); stroke: var(--border); stroke-width: 1; }
+.k-sheetlabel { fill: var(--fg-faint); font: 600 11px var(--mono); letter-spacing: 0.11em; }
+.k-sheetsub   { fill: var(--fg-faint); font: 13px var(--sans); }
+/* The whole idea in one line, so the picture has a spine to hang on. */
+.k-equation   { fill: var(--fg); font: 700 17px var(--mono); letter-spacing: -0.01em; }
 
-.k-frame  { fill: var(--bg-raised); stroke: var(--border); stroke-width: 1; }
+.k-box    { fill: var(--bg-raised); stroke: var(--border-strong); stroke-width: 1; }
 .k-chrome { fill: var(--bg-inset); }
 .k-dot    { fill: var(--border-strong); }
+.k-cap    { fill: var(--fg-faint); font: 600 10px var(--mono); letter-spacing: 0.12em; }
 
-/* The address bar carries the argument, so it is the only thing in the base
-   drawing that gets the accent. */
+/* The address bar is the only thing in the base drawing that gets the accent,
+   because it is the thing the base drawing is about. */
 .k-url  { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.2; }
-.k-urlt { fill: var(--accent); font: 600 13px var(--mono); }
-
-.k-callout   { fill: var(--accent); font: 600 11.5px var(--sans); }
-.k-callout-2 { fill: var(--fg-muted); font: 11.5px var(--sans); }
+.k-urlt { fill: var(--accent); font: 600 12.5px var(--mono); }
 
 .k-page    { fill: var(--bg); stroke: var(--border); stroke-width: 1; }
 .k-bar     { fill: var(--bg-inset); }
@@ -436,31 +440,28 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
 .k-fragt   { fill: var(--accent); font: 600 11px var(--mono); }
 .k-fragbar { fill: var(--accent); opacity: 0.28; }
 
-.k-code     { fill: var(--fg-muted); font: 12.5px var(--mono); }
+.k-code     { fill: var(--fg-muted); font: 12px var(--mono); }
 .k-code-hot { fill: var(--accent); font-weight: 600; }
 .k-rule     { stroke: var(--border); stroke-width: 1; }
 .k-note     { fill: var(--fg); font: 13px var(--sans); }
-.k-note-dim { fill: var(--fg-faint); }
 
-.k-lane    { fill: var(--fg-faint); font: 600 10.5px var(--mono); letter-spacing: 0.09em; }
-.k-lane-fx { fill: var(--accent); }
-
-.k-wire     { fill: var(--fg-muted); font: 12px var(--mono); }
-.k-wire-dim { fill: var(--fg-faint); }
+.k-wire     { fill: var(--fg-muted); font: 12.5px var(--mono); }
 .k-wire-fx  { fill: var(--accent); font-weight: 600; }
+.k-say      { fill: var(--fg-faint); font: 13px var(--sans); }
 
-.k-line      { stroke: var(--border-strong); stroke-width: 1.5; }
+.k-line      { stroke: var(--border-strong); stroke-width: 1.5; fill: none; }
 .k-line-dash { stroke-dasharray: 5 4; }
-.k-line-fx   { stroke: var(--accent); }
+.k-line-fx   { stroke: var(--accent); stroke-width: 1.8; }
 .k-head      { fill: var(--border-strong); }
 .k-head-fx   { fill: var(--accent); }
 
-/* The overlay. Dashed, tinted, sitting on top of a picture that was already
-   complete without it. */
-.k-band { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.2; stroke-dasharray: 6 4; opacity: 0.75; }
-
-.k-outcome    { fill: var(--fg-muted); font: 13px var(--sans); }
-.k-outcome-fx { fill: var(--accent); font-weight: 600; }
+/* The layer. Lifted with a shadow, breaking the top edge of the sheet below
+   it, so it reads as sitting on top rather than sitting beside. */
+.k-layer      { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.4; }
+.k-layerlabel { fill: var(--accent); font: 700 11.5px var(--mono); letter-spacing: 0.11em; }
+.k-layertext  { fill: var(--fg); font: 13.5px var(--sans); }
+.k-header     { fill: var(--accent); font: 700 12.5px var(--mono); }
+.k-leader     { stroke: var(--accent); stroke-width: 1.4; stroke-dasharray: 4 4; fill: none; opacity: 0.7; }
 
 .k-chip  { fill: var(--accent); }
 .k-chipt { fill: var(--accent-fg); font: 600 12px var(--mono); }

@@ -14,8 +14,8 @@ func IndexPage() Page {
 		Slug:    "",
 		Nav:     "Overview",
 		Title:   "fx — Fragment eXchange",
-		Tagline: "No build step. No client state. Just your server.",
-		Lede:    "Fragment navigation for server-rendered applications. Every filter, every open pane, every sort order lives in the URL; your server reads it and renders HTML, the way it always has, and fx swaps the fragment that changed. One attribute, about 400 lines, nothing to install.",
+		Tagline: "Server-rendered web apps like it's 2005, with navigation from this decade.",
+		Lede:    "For backend engineers who want an application, not a frontend project. No build step, no client state, no framework — every filter, every open pane and every sort order lives in the URL, your handler reads it and renders HTML the way it always has, and fx swaps the fragment that changed. One attribute, about 400 lines, nothing to install.",
 		Body:    indexBody,
 	}
 }
@@ -25,6 +25,12 @@ func indexBody(c *Ctx) Node {
 		html.Div(
 			html.Class("figure-wide hero-figure"),
 			html.Div(html.Class("diagram-scroll"), HookDiagram()),
+			html.P(
+				html.Class("figure-caption"),
+				Text(
+					"A page is a render function, and the URL is its only argument — which is precisely why everything a person can see has to live in there. fx does not change that function. It adds one header to the call, so the function can skip the parts of its own answer that nobody is going to look at.",
+				),
+			),
 		),
 		html.Div(
 			html.Class("hero-cta"),
