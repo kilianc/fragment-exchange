@@ -75,14 +75,16 @@ window.fx = (() => {
     }
 
     let originalUrl = window.location.href;
-    if (pushHistory && url !== originalUrl) {
+    let isUrlChange = pushHistory && url !== originalUrl;
+
+    if (isUrlChange) {
       cancelAllTimers();
       cancelAllFetches();
 
       // The entry we are leaving may have no state at all — a full page load
       // never sets any. Stamp it before pushing, so going back knows what to
-      // swap instead of falling back to a reload.
-      history.replaceState({ targetSelectors, loadingSelectors }, '');
+      // swap instead of falling back to a reload, and where the page was.
+      history.replaceState({ targetSelectors, loadingSelectors, scrollY: window.scrollY }, '');
       history.pushState({ targetSelectors, loadingSelectors }, '', url);
     }
 
@@ -108,6 +110,12 @@ window.fx = (() => {
       if (redirectUrl) {
         history.replaceState({ targetSelectors, loadingSelectors }, '', redirectUrl);
         fx.logDebug(`Navigation(${label}): redirected to`, redirectUrl);
+      }
+
+      if (isUrlChange) {
+        let hash = new URL(redirectUrl || url, originalUrl).hash;
+        let anchor = hash && document.getElementById(decodeURIComponent(hash.slice(1)));
+        anchor ? anchor.scrollIntoView() : window.scrollTo(0, 0);
       }
 
       let duration = Math.round(performance.now() - startTime);
@@ -436,6 +444,12 @@ window.fx = (() => {
       label: 'history',
       fallback: fx.historyFallback,
     });
+
+    // The browser restores scroll against the page being left, before the
+    // fragments arrive, so its guess is wrong as often as not.
+    if (typeof event.state?.scrollY === 'number') {
+      window.scrollTo(0, event.state.scrollY);
+    }
   });
 
   return fx;

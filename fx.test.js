@@ -239,6 +239,43 @@ test('browser navigation restores fragments on popstate', async () => {
   assert(fetchResponses.length === 0, 'no fetch responses should be left', fetchResponses.length);
 });
 
+test('a navigation resets the scroll position and popstate restores it', async () => {
+  let { fetchResponses } = mockFetch(10, [
+    '<div id="content" style="height: 4000px"><a id="link-to-b" href="/page-b" fx-target="#content">page a</a></div>',
+    '<div id="content" style="height: 100px">page b</div>',
+    '<div id="content" style="height: 4000px">page a restored</div>',
+  ]);
+
+  setPageHTML(
+    '/initial',
+    `
+    <div id="content" style="height: 4000px">
+      <a id="link-to-a" href="/page-a" fx-target="#content">initial</a>
+    </div>
+  `,
+  );
+
+  window.scrollTo(0, 500);
+  await waitUntil(() => Math.round(window.scrollY) === 500, 'the initial page never scrolled');
+
+  document.getElementById('link-to-a').click();
+  await waitForText('page a', '#content');
+  await waitUntil(() => Math.round(window.scrollY) === 0, 'a navigation should scroll back to the top');
+
+  window.scrollTo(0, 300);
+  await waitUntil(() => Math.round(window.scrollY) === 300, 'page a never scrolled');
+
+  document.getElementById('link-to-b').click();
+  await waitForText('page b', '#content');
+
+  // Page b is short on purpose: the browser clamps its own restore against it,
+  // so only the position fx saved on the entry can put page a back.
+  history.back();
+  await waitForText('page a restored', '#content');
+  await waitUntil(() => Math.round(window.scrollY) === 300, 'popstate should restore the scroll position');
+  assert(fetchResponses.length === 0, 'no fetch responses should be left', fetchResponses.length);
+});
+
 test('meta[name="fx-refresh"][fx-interval] should poll and self-replace', async () => {
   let { fetchResponses } = mockFetch(100, [
     `
