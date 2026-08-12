@@ -1,10 +1,12 @@
 package fx_test
 
 import (
+	"bytes"
 	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -45,6 +47,12 @@ func TestBrowser(t *testing.T) {
 	server := httptest.NewServer(mux)
 	defer server.Close()
 
+	page := server.URL + "/fx.test.html"
+	if filter := os.Getenv("FX_FILTER"); filter != "" {
+		page += "?filter=" + url.QueryEscape(filter)
+		t.Logf("running only cases matching %q", filter)
+	}
+
 	profile := t.TempDir()
 	args := []string{
 		"--headless=new",
@@ -60,14 +68,17 @@ func TestBrowser(t *testing.T) {
 		"--disable-backgrounding-occluded-windows",
 		"--user-data-dir=" + profile,
 		"--window-size=1200,900",
-		server.URL + "/fx.test.html",
+		page,
 	}
 	if os.Getenv("FX_HEADED") != "" {
 		args = args[1:]
 	}
 
+	// Chrome's stderr is noise until something goes wrong, at which point it is
+	// the only thing that explains why nothing was reported.
+	var chromeErr bytes.Buffer
 	cmd := exec.Command(chrome, args...)
-	cmd.Stderr = io.Discard
+	cmd.Stderr = &chromeErr
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("starting chrome: %v", err)
 	}
@@ -80,7 +91,7 @@ func TestBrowser(t *testing.T) {
 	select {
 	case body = <-results:
 	case <-time.After(90 * time.Second):
-		t.Fatal("timed out waiting for the browser to report results")
+		t.Fatalf("timed out waiting for the browser to report results\nchrome said:\n%s", chromeErr.String())
 	}
 
 	var run struct {
@@ -149,6 +160,12 @@ func findChrome(t *testing.T) string {
 		if path, err := exec.LookPath(c); err == nil {
 			return path
 		}
+	}
+
+	// CI sets this: there, a browser that has gone missing is a failure, not a
+	// suite that quietly tests nothing.
+	if os.Getenv("FX_REQUIRE_CHROME") != "" {
+		t.Fatal("no Chrome found, and FX_REQUIRE_CHROME is set")
 	}
 
 	t.Skip("no Chrome found; set FX_CHROME to run the browser tests")

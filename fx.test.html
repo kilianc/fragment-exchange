@@ -44,10 +44,13 @@
       // The tests rewrite document.body and push history entries, so they run
       // in an iframe and report back. Same file, two roles.
       if (window.top === window) {
+        let filter = new URLSearchParams(window.location.search).get('filter') || '';
+        let src = '?frame=1' + (filter ? '&filter=' + encodeURIComponent(filter) : '');
+
         document.body.innerHTML = `
           <h1>fx tests</h1>
           <pre id="fx-results">running…</pre>
-          <iframe id="fx-frame" src="?frame=1" title="test frame"></iframe>
+          <iframe id="fx-frame" src="${src}" title="test frame"></iframe>
         `;
 
         window.addEventListener('message', (event) => {

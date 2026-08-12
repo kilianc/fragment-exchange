@@ -18,6 +18,10 @@ gen: ## Regenerate .gsx.go from .gsx
 test: gen ## Run every test, including the browser suite
 	go test ./...
 
+.PHONY: test-one
+test-one: gen ## Run one browser case: make test-one FILTER=popstate
+	FX_FILTER="$(FILTER)" go test -run TestBrowser -v .
+
 .PHONY: test-headed
 test-headed: gen ## Run the browser suite in a visible Chrome
 	FX_HEADED=1 go test -run TestBrowser -v .
@@ -33,7 +37,7 @@ check: ## What CI runs: generated files current, formatted, vetted, tested
 	$(GSX) fmt -l ./web
 	@test -z "$$(gofmt -l . | grep -v '\.gsx\.go$$')" || { echo "gofmt:"; gofmt -l . | grep -v '\.gsx\.go$$'; exit 1; }
 	go vet ./...
-	go test ./...
+	go test -race ./...
 
 .PHONY: fmt
 fmt: ## Format Go and GSX sources

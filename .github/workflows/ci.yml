@@ -30,12 +30,16 @@ jobs:
       - name: Vet
         run: go vet ./...
 
-      # ubuntu-latest ships Chrome. The browser suite skips itself if it ever
-      # stops doing so, so make that a failure here rather than a silent pass.
+      # ubuntu-latest ships Chrome. FX_REQUIRE_CHROME below turns a missing
+      # browser into a failure rather than a suite that quietly tests nothing.
       - name: Chrome is available
         run: google-chrome --version
 
       - name: Test
         env:
           FX_CHROME: google-chrome
-        run: go test ./...
+          FX_REQUIRE_CHROME: "1"
+        run: go test -race ./...
+
+      - name: The deploy target builds
+        run: go build -o /dev/null ./cmd/server

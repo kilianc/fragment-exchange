@@ -63,7 +63,32 @@ func indexBody(c *Ctx) Node {
 				</p>,
 			)}
 
-			{Section("how", "How a navigation works",
+			{Section("lifecycle", "The lifecycle",
+				<p>
+					The same address and the same handler, at three levels of adoption. Each row is a place
+					you are allowed to stop.
+				</p>,
+
+				<div class="figure-wide">
+					<div class="diagram-scroll">
+						{LifecycleDiagram()}
+					</div>
+					<p class="figure-caption">
+						Level 1 is the one people do not believe until they see it written down: the handler is
+						not touched, renders exactly what it always rendered, and you still get the navigation.
+						Level 2 is an optimisation you reach for when a fragment has become expensive enough to
+						be a component of its own — a modal, a widget, a roll-up nobody is looking at.
+					</p>
+				</div>,
+
+				<p>
+					That ordering is the whole design. The backend keeps doing the thing backends are good at
+					— rendering a complete page for a URL — and the client gets faster in two steps, neither
+					of which is required and neither of which can leave you with a screen that has no address.
+				</p>,
+			)}
+
+			{Section("how", "What happens on a click",
 				Steps(
 					Text("You click a link that has fx-target."),
 					Text("fx pushes the URL and fetches it, with an FX-Target header."),

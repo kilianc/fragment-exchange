@@ -570,10 +570,19 @@ async function runTests() {
 
   if (!globalThis.tests) globalThis.tests = [];
 
-  let only = globalThis.tests.filter((t) => t.name.startsWith('only:'));
-  let selected = only.length > 0 ? only : globalThis.tests;
+  // ?filter=… narrows the run, so `go test -run` and opening the page by hand
+  // can both ask for one case.
+  let filter = new URLSearchParams(window.location.search).get('filter') || '';
+  let candidates = globalThis.tests;
+  if (filter) {
+    skipped.push(...candidates.filter((t) => !t.name.includes(filter)).map((t) => t.name));
+    candidates = candidates.filter((t) => t.name.includes(filter));
+  }
+
+  let only = candidates.filter((t) => t.name.startsWith('only:'));
+  let selected = only.length > 0 ? only : candidates;
   if (only.length > 0) {
-    skipped.push(...globalThis.tests.filter((t) => !t.name.startsWith('only:')).map((t) => t.name));
+    skipped.push(...candidates.filter((t) => !t.name.startsWith('only:')).map((t) => t.name));
   }
 
   for (let test of selected) {

@@ -31,8 +31,15 @@ JavaScript, or in their server template? If yes, they should.
 
 ## Tests
 
-The suite is `fx.test.js`, running in a real browser. `fx_test.go` serves the repository,
-opens `fx.test.html` in headless Chrome and reports each case as a Go subtest.
+`go test ./...` is the whole story. Three suites:
+
+- `protocol_test.go` — the Go package.
+- `fx.test.js` in a real browser. `fx_test.go` serves the repository, opens `fx.test.html`
+  in headless Chrome and reports each case as a Go subtest, so `-run`, `-v`, `-race` and
+  `-json` behave normally. `make test-one FILTER=…` narrows the browser run.
+- `web/handler_test.go` — the site over `httptest`, including the assertion that a request
+  naming `#jobs` really does skip the expensive fragment. If you change what the demo
+  renders, that test is what stops the log from lying.
 
 - Any change to `fx.js` needs a test in `fx.test.js` first, red before green.
 - Tests drive real events (`.click()`, `.requestSubmit()`) and wait for the DOM. Do not

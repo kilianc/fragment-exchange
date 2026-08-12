@@ -104,16 +104,34 @@ func reports(w http.ResponseWriter, r *http.Request) {
 
 ## Tests
 
-The suite is a web page, because fx is a few hundred lines of DOM, history and `fetch` and
-there is nothing worth testing outside a browser. A Go test serves the repository, opens
-the page in headless Chrome and waits for it to report back:
-
 ```bash
 go test ./...
 ```
 
-No Node, no test framework, nothing in `go.mod` for it. Set `FX_CHROME` to pick a browser,
-`FX_HEADED=1` to watch it run, or just open `fx.test.html` yourself.
+One command, standard tooling, no Node and no test framework — nothing in `go.mod` exists
+for the tests. Three suites run:
+
+| | |
+|---|---|
+| `protocol_test.go` | The Go package: header parsing, `Wants`, the file handler |
+| `fx_test.go` + `fx.test.js` | The library, in a real browser |
+| `web/handler_test.go` | The site end to end, including that `FX-Target` really does skip work |
+
+The browser suite is a web page, because fx is a few hundred lines of DOM, history and
+`fetch` and there is nothing worth testing outside a browser. `fx_test.go` serves the
+repository, opens `fx.test.html` in headless Chrome and waits for it to beacon its results
+back — then reports **every case as a Go subtest**, so `-v`, `-run`, `-race`, `-json` and
+CI annotations all work the way they do anywhere else.
+
+```bash
+make test-one FILTER=popstate   # one case
+make test-headed                # watch it in a visible browser
+make serve-tests                # drive the page yourself, with devtools open
+```
+
+`FX_CHROME` picks a browser. `FX_REQUIRE_CHROME=1` turns a missing browser into a failure
+instead of a skip — CI sets it, so the suite can never quietly test nothing. A stray
+`only:` in `fx.test.js` fails CI for the same reason.
 
 ## Repository
 

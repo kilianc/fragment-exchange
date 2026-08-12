@@ -395,6 +395,74 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
 
 .empty { color: var(--fg-faint); text-align: center; padding: 28px 0; }
 
+/* A figure wider than the prose column. main is left-aligned inside a wider
+   shell, so it grows into the space already there instead of being centred. */
+.figure-wide {
+  width: min(1080px, calc(100vw - 48px));
+  max-width: none;
+  margin: 12px 0 32px;
+}
+.figure-caption {
+  font-size: 13.5px;
+  color: var(--fg-faint);
+  margin: 0;
+  max-width: 68ch;
+}
+
+/* ---- lifecycle diagram --------------------------------------------- */
+
+.diagram {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 8px 0 28px;
+  font-family: var(--sans);
+  overflow: visible;
+}
+
+.d-kicker { fill: var(--fg-faint); font: 600 11px var(--mono); letter-spacing: 0.1em; }
+.d-note   { fill: var(--fg-muted); font: 13px var(--sans); }
+.d-url    { fill: var(--accent-soft); stroke: var(--accent); stroke-opacity: 0.35; }
+.d-mono   { fill: var(--accent); font: 600 13px var(--mono); }
+
+.d-badge   { fill: var(--bg-inset); stroke: var(--border-strong); }
+.d-badge-n { fill: var(--fg-muted); font: 600 12px var(--mono); text-anchor: middle; }
+.d-title   { fill: var(--fg); font: 640 15px var(--sans); }
+.d-sub     { fill: var(--fg-muted); font: 12.5px var(--sans); }
+
+.d-box     { fill: var(--bg-raised); stroke: var(--border-strong); }
+.d-box-hot { stroke: var(--accent); stroke-dasharray: 5 3; }
+.d-cap     { fill: var(--fg-faint); font: 600 9.5px var(--mono); letter-spacing: 0.12em; }
+
+.d-frag        { fill: var(--bg-inset); stroke: none; }
+.d-frag-swap   { fill: var(--accent); }
+.d-frag-run    { fill: color-mix(in srgb, var(--ok) 20%, transparent); }
+.d-frag-skip   { fill: none; stroke: var(--border-strong); stroke-dasharray: 3 3; }
+.d-frag-t      { fill: var(--fg-muted); font: 11px var(--mono); }
+.d-frag-t-swap { fill: var(--accent-fg); font-weight: 600; }
+.d-frag-t-skip { fill: var(--fg-faint); }
+
+.d-swap-tag { fill: var(--accent); font: 600 10.5px var(--mono); }
+.d-swap-in  { fill: var(--accent-fg); font: 600 9.5px var(--mono); opacity: 0.85; }
+.d-state      { fill: var(--ok); font: 10px var(--mono); }
+.d-state-skip { fill: var(--fg-faint); }
+.d-total      { fill: var(--fg-muted); font: 600 11px var(--mono); }
+
+.d-line      { stroke: var(--border-strong); stroke-width: 1.5; }
+.d-line-dash { stroke-dasharray: 5 4; }
+.d-head      { fill: var(--border-strong); }
+.d-wire      { fill: var(--fg-muted); font: 11px var(--mono); }
+.d-wire-hot  { fill: var(--accent); font-weight: 600; }
+
+.d-out      { fill: var(--fg); font: 640 15px var(--sans); }
+.d-out-fast { fill: var(--accent); font-family: var(--mono); font-size: 14px; }
+.d-out-sub  { fill: var(--fg-muted); font: 12px var(--sans); }
+
+@media (max-width: 720px) {
+  .diagram { min-width: 640px; }
+  .diagram-scroll { overflow-x: auto; }
+}
+
 .skip-link {
   position: absolute;
   left: -9999px;
