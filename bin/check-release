@@ -158,16 +158,21 @@ if [ $# -gt 0 ]; then
   fi
 fi
 
-# 6. Every URL we publish resolves, and serves the bytes we published a hash
-# for. A tag is new when this runs, so allow jsDelivr a moment to see it.
+# 6. Every URL that hands someone the library resolves, and serves the bytes we
+# published a hash for. That means the CDN and our own site: the site is the
+# install line people actually run, and a deploy that has not caught up hands
+# them a stale library just as quietly as a bad tag would.
+#
+# Both are new when this runs — the tag was pushed seconds ago and the site is
+# still deploying — so allow them a moment to catch up.
 if $check_cdn; then
   urls=$(for doc in $DOC_FILES; do
     [ -f "$doc" ] || continue
-    grep -oE 'https://cdn\.jsdelivr\.net/[^"[:space:]]+' "$doc" || true
+    grep -oE "https://[^\"'[:space:]<)]+/fx(\.dev)?\.js" "$doc" || true
   done | sort -u)
 
   if [ -z "$urls" ]; then
-    fail "--cdn was given but no CDN URLs are published anywhere"
+    fail "--cdn was given but no library URLs are published anywhere"
   fi
 
   for url in $urls; do
