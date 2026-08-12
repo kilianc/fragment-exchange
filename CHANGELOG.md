@@ -7,6 +7,18 @@ fx follows semver over three surfaces: the attributes, the `fx` object, and the
 `FX-Target` header. See the versioning notes in the README for why the header
 counts.
 
+## 1.1.1
+
+### The library
+
+- History entries keep the state the application put on them. fx writes its own
+  bookkeeping onto an entry before navigating away, and that write replaced the
+  entry's state wholesale, silently discarding anything the page had stored with
+  its own `pushState` or `replaceState`.
+- A failed navigation no longer clears the entry's state when it restores the
+  URL, and no longer touches history at all when the URL never moved — a
+  navigation to the address already in the address bar left nothing to undo.
+
 ## 1.1.0
 
 ### The library

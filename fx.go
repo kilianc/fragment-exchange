@@ -42,7 +42,7 @@ func Script() []byte { return script }
 func DevScript() []byte { return devScript }
 
 // Version is the version of the embedded library.
-const Version = "1.1.0"
+const Version = "1.1.1"
 
 // Handler serves fx.js and fx.dev.js at whatever paths it is mounted on,
 // keyed by the last path segment.
