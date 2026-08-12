@@ -61,7 +61,6 @@ func (c *Ctx) Wants(selector string) bool { return fx.Wants(c.R, selector) }
 func Pages() []Page {
 	return []Page{
 		IndexPage(),
-		WhyPage(),
 		PatternsPage(),
 		ReferencePage(),
 		DemoPage(),

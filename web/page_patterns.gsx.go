@@ -107,6 +107,7 @@ func patternsBody(c *Ctx) Node {
 				Text(
 					"A GET form puts its fields in the query string, so submitting it produces",
 				),
+				Text(" "),
 				html.Code(Text("/reports?q=timeout&status=open")),
 				Text(
 					" in the address bar. Refresh it and you get the same rows. Send it to a colleague and they see what you saw. On an internal tool, that one property is worth more than every animation you will ever write.",
@@ -242,6 +243,7 @@ func requeue(w http.ResponseWriter, r *http.Request) {
 				Text(
 					"Re-rendering a whole page to use one fragment is wasteful. Usually it does not matter — templates are fast and the expensive part is the database. When it does matter, the",
 				),
+				Text(" "),
 				html.Code(Text("FX-Target")),
 				Text(" header tells you exactly what you are allowed to skip."),
 			),

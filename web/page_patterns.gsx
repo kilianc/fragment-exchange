@@ -88,7 +88,7 @@ func patternsBody(c *Ctx) Node {
 `),
 
 				<p>
-					A GET form puts its fields in the query string, so submitting it produces
+					A GET form puts its fields in the query string, so submitting it produces{" "}
 					<code>/reports?q=timeout&amp;status=open</code> in the address bar. Refresh it and you
 					get the same rows. Send it to a colleague and they see what you saw. On an internal tool,
 					that one property is worth more than every animation you will ever write.
@@ -202,7 +202,7 @@ func requeue(w http.ResponseWriter, r *http.Request) {
 			{Section("cheap", "Making it cheap, once it is working",
 				<p>
 					Re-rendering a whole page to use one fragment is wasteful. Usually it does not matter —
-					templates are fast and the expensive part is the database. When it does matter, the
+					templates are fast and the expensive part is the database. When it does matter, the{" "}
 					<code>FX-Target</code> header tells you exactly what you are allowed to skip.
 				</p>,
 

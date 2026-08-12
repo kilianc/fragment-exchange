@@ -324,7 +324,7 @@ func DemoNotes() Node {
 			{Section("watching", "What to watch for",
 				<ul>
 					<li>
-						<strong>The poller.</strong> Every three seconds the page re-fetches itself asking for
+						<strong>The poller.</strong> Every three seconds the page re-fetches itself asking for{" "}
 						<code>#jobs, #detail</code>. The log shows the roll-up being skipped each time — about
 						250ms of database work this page never does.
 					</li>

@@ -82,8 +82,8 @@ func referenceBody(c *Ctx) Node {
 						result — which is the point.
 					</li>
 					<li>
-						<strong>POST</strong> sends <code>application/x-www-form-urlencoded</code>, or
-						<code>multipart/form-data</code> if the form has <code>enctype="multipart/form-data"</code>
+						<strong>POST</strong> sends <code>application/x-www-form-urlencoded</code>, or{" "}
+						<code>multipart/form-data</code> if the form has <code>enctype="multipart/form-data"</code>{" "}
 						or a file selected.
 					</li>
 					<li>
@@ -300,7 +300,7 @@ fx.Script()                                 // the file itself, if you'd rather 
 				</ul>,
 
 				<p>
-					Logging is off until you ask for it — <code>fx.toggleLog(true)</code>, or
+					Logging is off until you ask for it — <code>fx.toggleLog(true)</code>, or{" "}
 					<code>?fx-log=true</code> on any URL. The setting sticks for the tab's origin.
 				</p>,
 			)}
@@ -327,7 +327,7 @@ fx.Script()                                 // the file itself, if you'd rather 
 						external ones to load before running the next.
 					</li>
 					<li>
-						A target that is missing from the response is skipped, and a warning appears if
+						A target that is missing from the response is skipped, and a warning appears if{" "}
 						<code>fx.dev.js</code> is loaded.
 					</li>
 				</ul>,

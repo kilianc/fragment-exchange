@@ -5,6 +5,10 @@ package web
 // The site argues that you do not need a build step. Linking a compiled
 // stylesheet would be a strange way to make that case, and one <style> is
 // faster than one more request anyway.
+//
+// The palette is light in every environment. The page is mostly prose and
+// code samples whose highlighting has to stay in tune with the diagram beside
+// it, and one palette is one thing to keep in tune.
 const stylesheet = `
 :root {
   --bg: #fcfcfb;
@@ -36,37 +40,12 @@ const stylesheet = `
   --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0e0e11;
-    --bg-raised: #16161a;
-    --bg-code: #131317;
-    --bg-inset: #1c1c22;
-    --fg: #ececf0;
-    --fg-muted: #9d9daa;
-    --fg-faint: #74747f;
-    --border: #26262e;
-    --border-strong: #35353f;
-    --accent: #a5a0fb;
-    --accent-fg: #16161a;
-    --accent-soft: #1e1b3a;
-    --ok: #4ade80;
-    --warn: #fbbf24;
-    --bad: #f87171;
-
-    --hl-comment: #6d6d78;
-    --hl-string: #7ee2b8;
-    --hl-keyword: #d6a4ec;
-    --hl-tag: #f8a49b;
-    --hl-attr: #f0c07a;
-    --hl-fx: #a5a0fb;
-    --hl-number: #f0c07a;
-  }
-}
-
 * { box-sizing: border-box; }
 
+/* Form controls, scrollbars and the diagram follow this, so they stay light
+   under a dark OS instead of being half-inverted. */
 html {
+  color-scheme: light;
   -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;
   scroll-padding-top: 80px;
@@ -188,7 +167,7 @@ code {
   font-family: var(--mono);
   font-size: 0.875em;
   background: var(--bg-inset);
-  padding: 0.12em 0.38em;
+  padding: 0.1em 0.3em;
   border-radius: 5px;
 }
 

@@ -3,6 +3,7 @@ package web_test
 import (
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -211,6 +212,26 @@ func TestLibraryIsServed(t *testing.T) {
 	}
 }
 
+// A GSX call written in markup position without braces is valid GSX: it
+// compiles to a text node, and the page ships with Go source printed on it.
+// Nothing else catches that, so this does.
+func TestNoUnsplicedGoLeakedIntoThePage(t *testing.T) {
+	markers := []string{
+		`Text(&#34;`, `Text("`,
+		`Group(`, `Section(&#34;`, `Snippet(&#34;`, `Pull(`, `Note(&#34;`, `Attr(&#34;`,
+	}
+
+	for _, p := range web.Pages() {
+		_, body := get(t, p.Path(), "")
+
+		for _, m := range markers {
+			if strings.Contains(body, m) {
+				t.Errorf("%s: %q appears in the rendered page — a GSX call is missing its braces", p.Path(), m)
+			}
+		}
+	}
+}
+
 // Every link fx handles has to be a link a browser can follow on its own.
 func TestEveryFxLinkHasARealHref(t *testing.T) {
 	for _, p := range web.Pages() {
@@ -225,6 +246,24 @@ func TestEveryFxLinkHasARealHref(t *testing.T) {
 			if !strings.Contains(tag, "href=") {
 				t.Errorf("%s: a link with fx-target has no href: <a %s>", p.Path(), tag)
 			}
+		}
+	}
+}
+
+// GSX follows JSX's whitespace rules: a newline between prose and a tag is
+// removed, not collapsed to a space. Wrapping a paragraph so that an inline
+// <code> lands at the start of a line therefore glues two words together, and
+// it is invisible in the source.
+func TestNoGluedWordsAroundInlineCode(t *testing.T) {
+	glued := regexp.MustCompile(`[A-Za-z0-9,;:)]<code>|</code>[A-Za-z0-9]`)
+
+	for _, p := range web.Pages() {
+		_, body := get(t, p.Path(), "")
+
+		// Code samples are highlighted into spans, not <code> runs, so the
+		// only <code> elements left are the inline ones in prose.
+		for _, m := range glued.FindAllString(body, -1) {
+			t.Errorf("%s: %q — a space was lost between prose and inline code", p.Path(), m)
 		}
 	}
 }

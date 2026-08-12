@@ -121,9 +121,11 @@ func referenceBody(c *Ctx) Node {
 					Text(" sends "),
 					html.Code(Text("application/x-www-form-urlencoded")),
 					Text(", or"),
+					Text(" "),
 					html.Code(Text("multipart/form-data")),
 					Text(" if the form has "),
 					html.Code(Text("enctype=\"multipart/form-data\"")),
+					Text(" "),
 					Text("or a file selected."),
 				),
 				html.Li(
@@ -427,6 +429,7 @@ fx.Script()                                 // the file itself, if you'd rather 
 				Text("Logging is off until you ask for it — "),
 				html.Code(Text("fx.toggleLog(true)")),
 				Text(", or"),
+				Text(" "),
 				html.Code(Text("?fx-log=true")),
 				Text(" on any URL. The setting sticks for the tab's origin."),
 			),
@@ -464,6 +467,7 @@ fx.Script()                                 // the file itself, if you'd rather 
 					Text(
 						"A target that is missing from the response is skipped, and a warning appears if",
 					),
+					Text(" "),
 					html.Code(Text("fx.dev.js")),
 					Text(" is loaded."),
 				),

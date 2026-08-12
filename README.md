@@ -10,8 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://fx.ciuffolo.com">Documentation</a> ·
-  <a href="https://fx.ciuffolo.com/why">Why it exists</a> ·
+  <a href="https://fx.ciuffolo.com">The paper</a> ·
   <a href="https://fx.ciuffolo.com/patterns">Patterns</a> ·
   <a href="https://fx.ciuffolo.com/reference">Reference</a> ·
   <a href="https://fx.ciuffolo.com/demo">Live demo</a>
@@ -46,8 +45,8 @@ of the domain model, and none of that buys anything except a nicer transition.
 
 fx is the smallest thing that gets you the nicer transition without the rest. HTMX and
 Unpoly are both good software that did not fit — the long version, including what fx
-borrows from Unpoly and what this approach costs you, is at
-[fx.ciuffolo.com/why](https://fx.ciuffolo.com/why).
+borrows from Unpoly and what this approach costs you, is the paper at
+[fx.ciuffolo.com](https://fx.ciuffolo.com).
 
 ## What it does
 

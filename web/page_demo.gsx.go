@@ -367,6 +367,7 @@ func DemoNotes() Node {
 				html.Li(
 					html.Strong(Text("The poller.")),
 					Text(" Every three seconds the page re-fetches itself asking for"),
+					Text(" "),
 					html.Code(Text("#jobs, #detail")),
 					Text(
 						". The log shows the roll-up being skipped each time — about 250ms of database work this page never does.",

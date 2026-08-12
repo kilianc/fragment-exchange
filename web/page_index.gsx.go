@@ -14,7 +14,7 @@ func IndexPage() Page {
 		Slug:  "",
 		Nav:   "Overview",
 		Title: "fx — Fragment eXchange",
-		Lede:  "Your server already knows how to render the page. fx swaps the parts that changed. One attribute, 400 lines, no build step.",
+		Lede:  "Your server already knows how to render the truth. The browser just swaps the parts that changed. One attribute, ~400 lines, no build step, no dependencies.",
 		Body:  indexBody,
 	}
 }
@@ -32,17 +32,15 @@ func indexBody(c *Ctx) Node {
 			),
 			html.A(
 				html.Class("btn"),
-				html.Href("/why"),
-				Attr("fx-target", "#content"),
-				Attr("fx-loading-target", "#progress-bar"),
-				Text("Why it exists"),
-			),
-			html.A(
-				html.Class("btn"),
 				html.Href("/reference"),
 				Attr("fx-target", "#content"),
 				Attr("fx-loading-target", "#progress-bar"),
 				Text("Reference"),
+			),
+			html.A(
+				html.Class("btn"),
+				html.Href("https://github.com/kilianc/fragment-exchange"),
+				Text("GitHub"),
 			),
 		),
 		Snippet(
@@ -59,17 +57,22 @@ func indexBody(c *Ctx) Node {
 `,
 		),
 		html.P(
-			Text("Click the link and fx fetches "),
+			Text("Click the link. fx fetches "),
 			html.Code(Text("/reports")),
-			Text(", pulls "),
+			Text(", lifts "),
 			html.Code(Text("#content")),
 			Text(
-				" out of the response, puts it in the page and updates the address bar. No full reload, no flash, no scroll jump.",
+				" out of the response, puts it in the page and updates the address bar. No reload, no flash, no scroll jump.",
 			),
 		),
 		html.P(
 			Text(
-				"Turn JavaScript off and the same link still works, because it is a link to a page your server renders. That is not a fallback bolted on afterwards. It is the starting point.",
+				"Turn JavaScript off. The same link still works, because it is a link to a page your server renders.",
+			),
+		),
+		html.P(
+			Text(
+				"That is the entire library. Everything below is the argument for why it should never get any bigger.",
 			),
 		),
 		Pull(
@@ -78,9 +81,266 @@ func indexBody(c *Ctx) Node {
 			),
 		),
 		Section(
-			"what",
-			"What it does",
-			html.P(Text("Four things. That is the whole library.")),
+			"baseline",
+			"The baseline is already good",
+			html.P(
+				Text(
+					"Server-side rendering is simple, observable and robust. It works with your cache, your load balancer, your logs and the application logic you already wrote. Every engineer on your team understands it without being taught. A full page reload is correct, trivial to reason about, and impossible to get subtly wrong.",
+				),
+			),
+			html.P(
+				Text(
+					"It has exactly one problem: reloading the whole document to change 5% of it feels bad. A flash, a lost scroll position, a re-run of everything the page needed the first time.",
+				),
+			),
+			html.P(
+				Text(
+					"That is a small problem. The industry solved it with a very large answer.",
+				),
+			),
+		),
+		Section(
+			"cost",
+			"The cost of accidental complexity",
+			html.P(
+				Text(
+					"Modern web development assumes a client-side framework is the default, even for applications whose data and operational requirements are inherently server-centric. Teams carry the burden of a frontend toolchain, a dependency ecosystem and a dual-state architecture — while getting none of the leverage those systems were designed to provide.",
+				),
+			),
+			html.P(
+				Text(
+					"It is not a one-time cost. It is a subscription, and the charges land in places that do not look like frontend work:",
+				),
+			),
+			html.Ul(
+				html.Li(
+					html.Strong(Text("Two models of the same thing.")),
+					Text(
+						" Your server knows what a record is. Now the client knows too, slightly differently, and the bugs live in the gap.",
+					),
+				),
+				html.Li(
+					html.Strong(Text("A build you have to keep alive.")),
+					Text(
+						" Toolchains rot. The version you pinned stops working with the runtime you have, and an afternoon disappears.",
+					),
+				),
+				html.Li(
+					html.Strong(Text("A dependency graph nobody has read.")),
+					Text(
+						" A modest app pulls in hundreds of packages, any of which can run arbitrary code on your laptop at install time.",
+					),
+				),
+				html.Li(
+					html.Strong(Text("An onboarding tax, forever.")),
+					Text(
+						" Teaching a backend team a second stack is expensive once, and expensive again every year that stack moves.",
+					),
+				),
+			),
+			html.P(
+				Text("For a product where the client genuinely "),
+				html.Em(Text("is")),
+				Text(
+					" the application — an editor, a design tool, a game — that bill buys something worth having. For a page that shows rows from a database and lets you filter them, it buys a slightly nicer transition.",
+				),
+			),
+		),
+		Section(
+			"wanted",
+			"What I actually wanted",
+			html.P(
+				Text(
+					"The developer experience of Rails, or PHP, or anything from the era when the server did the work and a page was a page. My team writes Go. They are excellent at backends and have no interest in becoming frontend engineers, and I did not think they should have to be in order to ship an internal tool.",
+				),
+			),
+			html.P(
+				Text("So the starting point of a site built with fx is that it is "),
+				html.Em(Text("not")),
+				Text(
+					" built with fx. It is a fully working, JavaScript-free website. You click, the server re-renders, the page reloads. Then, on top of that and changing none of it, a handful of attributes let the browser skip the reload and replace only what moved.",
+				),
+			),
+			Pull(
+				Text(
+					"Not a client application that happens to talk to a server. A website that happens to skip the reload.",
+				),
+			),
+			html.P(
+				Text(
+					"That ordering is the whole design. If the enhanced path is the real path and the plain path is a courtesy fallback, you have not built a website — you have built a client app with an emergency exit that nobody tests. Here the plain path is the only path. fx is a shortcut across it.",
+				),
+			),
+		),
+		Section(
+			"htmx",
+			"Why not HTMX",
+			html.P(
+				Text(
+					"HTMX is good software, and it got a lot of people to reconsider the server. It did not fit, and the reason is a mental model rather than a missing feature.",
+				),
+			),
+			html.P(
+				Text(
+					"In HTMX the unit is the element. An element issues a request and receives its own replacement. Follow that to its conclusion and your server grows a route per fragment —",
+				),
+				Text(" "),
+				html.Code(Text("/rows")),
+				Text(", "),
+				html.Code(Text("/row/7/status")),
+				Text(", "),
+				html.Code(Text("/sidebar")),
+				Text(
+					" — each returning HTML that only makes sense inside a page it never renders.",
+				),
+			),
+			Cols(
+				Snippet(
+					"html",
+					"element-centric",
+					`
+<button hx-get="/rows?page=2"
+        hx-target="#rows"
+        hx-swap="outerHTML">
+  Next
+</button>
+
+<!-- needs a /rows route that renders
+     rows and nothing else -->
+`,
+				),
+				Snippet(
+					"html",
+					"page-centric",
+					`
+<a href="/reports?page=2"
+   fx-target="#rows">
+  Next
+</a>
+
+<!-- renders /reports, exactly as it
+     does for a reload -->
+`,
+				),
+			),
+			html.P(
+				Text(
+					"The consequence is not stylistic. With the element-centric model there is often no URL that renders what you are looking at. You can reach page 2 by clicking, but you cannot link to it, refresh into it, or send it to a colleague — not without extra work to keep the address bar in sync with a state the server cannot produce on its own.",
+				),
+			),
+			html.P(
+				Text("And the surface grows to match. "),
+				html.Code(Text("hx-swap")),
+				Text(" with a dozen strategies,"),
+				Text(" "),
+				html.Code(Text("hx-swap-oob")),
+				Text(", "),
+				html.Code(Text("hx-trigger")),
+				Text(" with its own event mini-language,"),
+				Text(" "),
+				html.Code(Text("hx-boost")),
+				Text(
+					" to make ordinary links behave like everything else, an extension system. Every piece is reasonable. Together they are a framework, and I went looking precisely because I did not want one.",
+				),
+			),
+		),
+		Section(
+			"unpoly",
+			"Why not Unpoly",
+			html.P(
+				Text(
+					"Unpoly was much closer, and credit where it is due: it is page-centric, it treats real navigation as the foundation, and two of the best ideas in fx are lifted straight from it. Unpoly's ",
+				),
+				html.Code(Text("[up-hungry]")),
+				Text(" is "),
+				html.Code(Text("fx-hungry")),
+				Text(". Unpoly's"),
+				Text(" "),
+				html.Code(Text("X-Up-Target")),
+				Text(" header is "),
+				html.Code(Text("FX-Target")),
+				Text(
+					". Neither is my invention, and I would rather say so on the front page than in a footnote.",
+				),
+			),
+			html.P(
+				Text(
+					"What I could not get comfortable with was how much it does for you. Layers and overlays, caching and preloading, form validation, transitions, compilers, and a navigation model with firm opinions about history that I kept working around. When Unpoly did what I meant, it was lovely. When it did not, I was reading library source to find out why my back button had behaved that way — which is the exact afternoon I was trying to stop spending.",
+				),
+			),
+			Pull(
+				Text(
+					"A wide API costs the same whether the code is mine or not. Past a certain point, managing the library is the framework work I left to avoid.",
+				),
+			),
+			html.P(
+				Text(
+					"This is a fit judgement, not a verdict. If Unpoly's defaults match how you think, use Unpoly — it is more capable than fx and always will be. I wanted something I could hold entirely in my head, and “capable” is the opposite of that.",
+				),
+			),
+		),
+		Section(
+			"lifecycle",
+			"The lifecycle",
+			html.P(
+				Text(
+					"One address, one handler, three levels of adoption. Each row is a place you are allowed to stop.",
+				),
+			),
+			html.Div(
+				html.Class("figure-wide"),
+				html.Div(html.Class("diagram-scroll"), LifecycleDiagram()),
+				html.P(
+					html.Class("figure-caption"),
+					Text(
+						"Level 1 is the row people do not believe until they see it written down: the handler is untouched, renders exactly what it always rendered, and you still get the navigation. Level 2 is the optimisation you reach for once a fragment has grown expensive enough to be a component of its own — a modal, a widget, a roll-up nobody is looking at.",
+					),
+				),
+			),
+			html.P(
+				Text(
+					"That is what makes it incremental. The backend keeps doing the thing backends are good at — rendering a complete page for a URL — and the client gets faster in two steps, neither of which is required, and neither of which can leave you with a screen that has no address.",
+				),
+			),
+		),
+		Section(
+			"rules",
+			"The rules",
+			html.H3(Text("1. Simplicity beats performance. Always.")),
+			html.P(
+				Text(
+					"fx re-fetches the whole page and throws most of it away. That is wasteful, and it is the most important decision in the library, because it is what keeps the code small enough to read in one sitting. Want the waste back? Read the header and render less. Your call, per handler, when you have a reason.",
+				),
+			),
+			html.H3(Text("2. The server owns the page")),
+			html.P(
+				Text(
+					"One renderer, and it is the one you already have. fx never composes, never templates, never decides what a page should contain. It reads a document your server wrote and moves elements out of it. The browser is a display layer.",
+				),
+			),
+			html.H3(Text("3. The URL is king")),
+			html.P(
+				Text(
+					"Filters, sort, page, which row is open, which dialog is showing — all of it in the query string. Then a refresh reproduces the screen exactly, the back button does the obvious thing, and a colleague who pastes your link sees what you see. On an internal tool that last one is not a nicety. It is most of the job.",
+				),
+			),
+			html.H3(Text("4. Fail into the browser")),
+			html.P(
+				Text(
+					"A timeout, a 500, a fragment missing from the response — every failure ends with the browser doing the navigation itself. Worst case the user gets a page load, which is what they would have got if you had never added the library.",
+				),
+			),
+			html.H3(Text("5. Small enough to read is small enough to change")),
+			html.P(
+				Text(
+					"One file. No build step, no package, no lockfile, no dependency. If fx does not do what you need, the fix is in front of you rather than in somebody's issue tracker. The goal is a library so dumb that thirty seconds of documentation is enough.",
+				),
+			),
+		),
+		Section(
+			"api",
+			"The whole API",
+			html.P(Text("Four attributes. That is not an excerpt.")),
 			Table(
 				[]string{"", "What it is for"},
 				[][]Node{
@@ -103,61 +363,97 @@ func indexBody(c *Ctx) Node {
 				},
 			),
 			html.P(
-				Text(
-					"There is a fifth thing, and it lives on your side: every request carries an",
-				),
+				Text("And one thing on your side. Every request carries an "),
 				html.Code(Text("FX-Target")),
 				Text(
-					" header naming the fragments the browser is about to use. Your handler can read it and skip the work nobody asked for. It is entirely optional — a handler that ignores it is correct, just slower.",
+					" header naming the fragments the browser is about to use, so your handler can skip the work nobody asked for. It is optional. A handler that ignores it is correct, just slower.",
 				),
+			),
+			Snippet(
+				"go",
+				"handler",
+				`
+func reports(w http.ResponseWriter, r *http.Request) {
+	page := ReportsPage{Filters: parseFilters(r)}
+
+	// True on any page load, and on a fragment request that named it.
+	if fx.Wants(r, "#summary") {
+		page.Summary = aggregate(r) // 900ms, skipped when nobody asked
+	}
+
+	render(w, page)
+}
+`,
+			),
+			html.P(
+				html.A(
+					html.Href("/reference"),
+					Attr("fx-target", "#content"),
+					Attr("fx-loading-target", "#progress-bar"),
+					Text("The reference"),
+				),
+				Text(" "),
+				Text("is one page, and it is short for the same reason."),
 			),
 		),
 		Section(
-			"lifecycle",
-			"The lifecycle",
-			html.P(
-				Text(
-					"The same address and the same handler, at three levels of adoption. Each row is a place you are allowed to stop.",
-				),
-			),
-			html.Div(
-				html.Class("figure-wide"),
-				html.Div(html.Class("diagram-scroll"), LifecycleDiagram()),
-				html.P(
-					html.Class("figure-caption"),
+			"costs",
+			"What this costs you",
+			html.P(Text("An honest list, because a pitch without one is marketing:")),
+			html.Ul(
+				html.Li(
+					html.Strong(Text("More bytes over the wire.")),
 					Text(
-						"Level 1 is the one people do not believe until they see it written down: the handler is not touched, renders exactly what it always rendered, and you still get the navigation. Level 2 is an optimisation you reach for when a fragment has become expensive enough to be a component of its own — a modal, a widget, a roll-up nobody is looking at.",
+						" Every navigation fetches a whole document to use part of it. On a slow connection with a heavy page that is a real cost — until you answer the header, which is exactly why the header exists.",
+					),
+				),
+				html.Li(
+					html.Strong(Text("Round-trips for things a client could do alone.")),
+					Text(
+						" Toggling a disclosure or sorting a table you already have is a server request. Sometimes that is silly. Write six lines of JavaScript for those and keep fx for navigation.",
+					),
+				),
+				html.Li(
+					html.Strong(Text("No component model.")),
+					Text(
+						" Reuse is whatever your server-side templating gives you. If your templating is bad, fx will not save you.",
+					),
+				),
+				html.Li(
+					html.Strong(Text("Element identity is not preserved.")),
+					Text(" A swap replaces elements outright, so a focused input or an open "),
+					html.Code(Text("<details>")),
+					Text(
+						" inside a swapped fragment is gone. fx restores scroll positions and nothing else. Target more narrowly, or keep the stateful part outside the fragment.",
+					),
+				),
+				html.Li(
+					html.Strong(Text("It will not carry a rich client.")),
+					Text(
+						" If your application's state genuinely lives in the browser, fx is the wrong tool and no amount of attributes will fix that.",
 					),
 				),
 			),
-			html.P(
-				Text(
-					"That ordering is the whole design. The backend keeps doing the thing backends are good at — rendering a complete page for a URL — and the client gets faster in two steps, neither of which is required and neither of which can leave you with a screen that has no address.",
+			Note(
+				"Where the line actually falls",
+				html.P(
+					Text(
+						"Every app has a corner with real local state — a spreadsheet-like grid over ten thousand rows, a chart with a brush, a canvas. Use a proper library there. Use React there if you want. fx holds no global state, claims no ownership of the DOM, and will not fight you. The mistake is letting that one corner decide the architecture of the other twenty screens.",
+					),
 				),
 			),
 		),
 		Section(
-			"how",
-			"What happens on a click",
-			Steps(
-				Text("You click a link that has fx-target."),
-				Text("fx pushes the URL and fetches it, with an FX-Target header."),
+			"npm",
+			"The part about npm",
+			html.P(
 				Text(
-					"The server renders a page. A whole page — the same one it would render for a reload.",
-				),
-				Text(
-					"fx parses the response in memory and lifts out the fragments named by fx-target.",
-				),
-				Text(
-					"Those elements replace the ones in the page, and inline scripts inside them run.",
-				),
-				Text(
-					"Anything goes wrong — a timeout, a 500, a missing fragment — and the browser does the navigation itself.",
+					"There is a second reason to want a file instead of a package, and it stopped being theoretical a while ago. Installing a JavaScript dependency runs install scripts from the entire transitive graph with your user's privileges — your SSH keys, your cloud credentials, your browser profile. Every few months another popular package is compromised and everybody's CI runs the payload.",
 				),
 			),
 			html.P(
 				Text(
-					"No virtual DOM, no hydration, no client-side router, no store. The page state lives in the URL, which means the back button, a refresh, and a link pasted into chat all show the same thing.",
+					"fx is a file. Read all of it in less time than it took to read this page, copy it into your repository, and never think about its supply chain again, because it does not have one.",
 				),
 			),
 		),
@@ -168,46 +464,67 @@ func indexBody(c *Ctx) Node {
 			Code("bash", `curl -O https://fx.ciuffolo.com/fx.js`),
 			html.P(
 				Text(
-					"There is no package, no lockfile and no transitive dependency to audit, because there is nothing to depend on. If you write Go, the repository also ships a small package that embeds the script and answers the header:",
+					"If you write Go, the repository also ships a small package that embeds the script and answers the header:",
 				),
 			),
+			Code("bash", `go get github.com/kilianc/fragment-exchange`),
 			Snippet(
 				"go",
 				"main.go",
 				`
-mux.Handle("GET /fx.js", fx.Handler())
+import fx "github.com/kilianc/fragment-exchange"
 
-func reports(w http.ResponseWriter, r *http.Request) {
-	var rows []Row
-	if fx.Wants(r, "#results") {
-		rows = expensiveQuery(r) // skipped when only the nav is being swapped
-	}
-	render(w, rows)
-}
+mux.Handle("GET /fx.js", fx.Handler())  // served from your binary
+
+fx.IsFragment(r)                        // did fx make this request?
+fx.Targets(r)                           // []string{"#content", "#page-title"}
+fx.Wants(r, "#summary")                 // render this fragment?
 `,
 			),
 		),
 		Section(
-			"suits",
-			"What it is good at, and what it is not",
-			html.P(
-				Text(
-					"fx is for applications whose truth lives on the server: internal tools, dashboards, admin panels, anything table-shaped and data-heavy. If your team writes backend code and your pages are already server-rendered, fx makes them feel like an application without making you build one.",
-				),
-			),
-			html.P(
-				Text(
-					"It is not a framework and does not want to become one. There are no components, no reactivity, no client-side state and no template system, on purpose. When a corner of your page genuinely needs local state — a spreadsheet grid, a chart with a brush, a drag-and-drop canvas — use a real library for that corner. fx has no opinion about it and will not get in the way.",
-				),
-			),
-			Note(
-				"The design rule",
-				html.P(
-					Text(
-						"When simplicity and performance disagree, simplicity wins. fx re-fetches whole pages and throws most of the response away. That is wasteful, and it is exactly why the library fits in your head in one sitting. If you want the waste back, the",
+			"next",
+			"Where to go next",
+			html.Ul(
+				html.Li(
+					html.A(
+						html.Href("/patterns"),
+						Attr("fx-target", "#content"),
+						Attr("fx-loading-target", "#progress-bar"),
+						Text("Fragment-driven development"),
 					),
-					html.Code(Text("FX-Target")),
-					Text(" header is right there."),
+					Text(" "),
+					Text(
+						"— the shape of a real application built this way: where state lives, how dialogs and detail panes work, and the mistakes worth naming.",
+					),
+				),
+				html.Li(
+					html.A(
+						html.Href("/reference"),
+						Attr("fx-target", "#content"),
+						Attr("fx-loading-target", "#progress-bar"),
+						Text("Reference"),
+					),
+					Text(" "),
+					Text("— everything fx does, on one short page."),
+				),
+				html.Li(
+					html.A(
+						html.Href("/demo"),
+						Attr("fx-target", "#content"),
+						Attr("fx-loading-target", "#progress-bar"),
+						Text("The demo"),
+					),
+					Text(" "),
+					Text(
+						"— a working application with a log of every request, showing what the browser asked for against what the server chose to render.",
+					),
+				),
+			),
+			html.P(
+				html.Class("muted small"),
+				Text(
+					"This page was rendered by a Go server and swapped in by the library it describes. If you got here by clicking, you have already seen it work.",
 				),
 			),
 		),
