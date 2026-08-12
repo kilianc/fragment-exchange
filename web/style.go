@@ -40,6 +40,10 @@ const stylesheet = `
   --radius: 10px;
   --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
   --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+  /* System serif only. The site has no external requests and is not about to
+     grow one for a font. ui-serif is New York on Apple platforms; Charter and
+     Georgia cover the rest. */
+  --serif: ui-serif, Charter, "Bitstream Charter", "Iowan Old Style", Georgia, "Times New Roman", serif;
 }
 
 * { box-sizing: border-box; }
@@ -57,19 +61,27 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--fg);
-  font-family: var(--sans);
-  font-size: 16.5px;
-  line-height: 1.65;
+  font-family: var(--serif);
+  font-size: 18px;
+  line-height: 1.72;
   -webkit-font-smoothing: antialiased;
+}
+
+/* The paper is serif. The application is not — the chrome, the tables and the
+   demo stay sans, so a control never reads as prose. */
+header.top, nav.primary, .btn, table, footer.bottom,
+.panel, .filters, button, select, input, .pill, .log, .empty,
+.snippet-label, .kicker, .diagram, .steps li::before {
+  font-family: var(--sans);
 }
 
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
-h1, h2, h3 { line-height: 1.25; letter-spacing: -0.02em; font-weight: 640; }
-h1 { font-size: 2.1rem; margin: 0 0 12px; }
-h2 { font-size: 1.4rem; margin: 56px 0 16px; }
-h3 { font-size: 1.05rem; margin: 32px 0 10px; }
+h1, h2, h3 { line-height: 1.22; letter-spacing: -0.01em; font-weight: 680; }
+h1 { font-size: 2.3rem; margin: 0 0 14px; }
+h2 { font-size: 1.55rem; margin: 60px 0 16px; }
+h3 { font-size: 1.15rem; margin: 34px 0 10px; }
 
 p { margin: 0 0 18px; }
 ul, ol { margin: 0 0 18px; padding-left: 22px; }
@@ -142,11 +154,11 @@ nav.primary a:hover { background: var(--bg-inset); color: var(--fg); text-decora
 nav.primary a[aria-current="page"] { background: var(--bg-inset); color: var(--fg); font-weight: 560; }
 
 .shell { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
-main { padding: 48px 0 96px; max-width: 760px; }
+main { padding: 48px 0 96px; max-width: 740px; }
 main.wide { max-width: none; }
 
 .page-head { margin-bottom: 36px; }
-.lede { font-size: 1.15rem; color: var(--fg-muted); margin: 0; max-width: 62ch; }
+.lede { font-size: 1.2rem; line-height: 1.6; color: var(--fg-muted); margin: 0; max-width: 60ch; }
 
 footer.bottom {
   border-top: 1px solid var(--border);
@@ -160,12 +172,14 @@ footer.bottom {
 
 /* ---- code ---------------------------------------------------------- */
 
+/* Mono runs large next to a serif, and the inset needs to sit tight enough
+   that a comma after it does not look like a space. */
 code {
   font-family: var(--mono);
-  font-size: 0.875em;
+  font-size: 0.84em;
   background: var(--bg-inset);
-  padding: 0.1em 0.3em;
-  border-radius: 5px;
+  padding: 0.08em 0.26em;
+  border-radius: 4px;
 }
 
 pre {
@@ -222,7 +236,7 @@ pre code {
 .cols > * { min-width: 0; }
 @media (max-width: 760px) { .cols { grid-template-columns: 1fr; } }
 
-table { border-collapse: collapse; width: 100%; margin: 0 0 22px; font-size: 15px; }
+table { border-collapse: collapse; width: 100%; margin: 0 0 22px; font-size: 15px; line-height: 1.6; }
 th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
 th { font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--fg-faint); font-weight: 600; }
 td code { white-space: nowrap; }
@@ -273,8 +287,9 @@ td code { white-space: nowrap; }
 }
 
 .pull {
-  font-size: 1.18rem;
+  font-size: 1.28rem;
   line-height: 1.5;
+  font-style: italic;
   border-left: 3px solid var(--border-strong);
   padding-left: 18px;
   margin: 28px 0;
@@ -379,7 +394,7 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
   margin: 12px 0 32px;
 }
 .figure-caption {
-  font-size: 13.5px;
+  font-size: 15px;
   color: var(--fg-faint);
   margin: 0;
   max-width: 68ch;
