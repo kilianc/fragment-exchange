@@ -2,3 +2,7 @@ bin/
 .DS_Store
 *.log
 .vercel/
+
+# Raw notes: mine, not the repository's.
+reflextion.md
+*.notes.md
