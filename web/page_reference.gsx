@@ -33,6 +33,11 @@ func referenceBody(c *Ctx) Node {
 							Text("Swap this element on every navigation, whether or not the link asked for it. Requires an id; without one it is ignored."),
 						),
 						Row(
+							C("fx-scroll"),
+							C("<a>, <form>, submitter"),
+							Text(`Where the page lands: "top", "preserve", or a selector to bring into view. Overrides what the URL would decide on its own.`),
+						),
+						Row(
 							C("fx-interval"),
 							C(`<meta name="fx-refresh">`),
 							Text("Re-fetch the current URL every N milliseconds and swap fx-target."),
@@ -119,6 +124,37 @@ func referenceBody(c *Ctx) Node {
 				<p>
 					Hungry elements are collected from both the current page and the response, so a fragment
 					can introduce a new hungry element and it will still be picked up.
+				</p>,
+			)}
+
+			{Section("scroll", "Where the page lands",
+				Code("html", `
+<a href="/reports?sort=name" fx-target="#results">Sort by name</a>
+<a href="/reports?page=2" fx-target="#results" fx-scroll="#results">Next</a>
+`),
+
+				<p>
+					The URL decides this on its own, and most of the time you never think about it. A
+					path change is a new page, so it starts at the top. A <code>#hash</code> goes to
+					that element. A query string change is the same page refined — sorted, filtered,
+					paged — so the scroll position stays where the reader left it.
+				</p>,
+
+				<p>
+					Going back or forward restores the position the entry was left at, which the
+					browser cannot do for you here: it restores against the page being left, before
+					the fragments arrive, so its guess is wrong as often as not.
+				</p>,
+
+				<p>
+					<code>fx-scroll</code> is for the case the URL cannot tell apart. Paging is the
+					one that comes up: the pager is at the bottom, and staying put after a click
+					leaves you at the bottom of a fresh page. <code>fx-scroll="#results"</code> puts
+					you at the top of the new rows. It takes <code>top</code>,{" "}
+					<code>preserve</code>, or any selector; on a form, a submitter's own{" "}
+					<code>fx-scroll</code> wins over the form's, the same way{" "}
+					<code>formaction</code> does. A selector that matches nothing leaves the page
+					where it is and warns, if <code>fx.dev.js</code> is loaded.
 				</p>,
 			)}
 

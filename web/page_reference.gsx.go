@@ -49,6 +49,13 @@ func referenceBody(c *Ctx) Node {
 						),
 					),
 					Row(
+						C("fx-scroll"),
+						C("<a>, <form>, submitter"),
+						Text(
+							`Where the page lands: "top", "preserve", or a selector to bring into view. Overrides what the URL would decide on its own.`,
+						),
+					),
+					Row(
 						C("fx-interval"),
 						C(`<meta name="fx-refresh">`),
 						Text("Re-fetch the current URL every N milliseconds and swap fx-target."),
@@ -172,6 +179,54 @@ func referenceBody(c *Ctx) Node {
 				Text(
 					"Hungry elements are collected from both the current page and the response, so a fragment can introduce a new hungry element and it will still be picked up.",
 				),
+			),
+		),
+		Section(
+			"scroll",
+			"Where the page lands",
+			Code(
+				"html",
+				`
+<a href="/reports?sort=name" fx-target="#results">Sort by name</a>
+<a href="/reports?page=2" fx-target="#results" fx-scroll="#results">Next</a>
+`,
+			),
+			html.P(
+				Text(
+					"The URL decides this on its own, and most of the time you never think about it. A path change is a new page, so it starts at the top. A ",
+				),
+				html.Code(Text("#hash")),
+				Text(
+					" goes to that element. A query string change is the same page refined — sorted, filtered, paged — so the scroll position stays where the reader left it.",
+				),
+			),
+			html.P(
+				Text(
+					"Going back or forward restores the position the entry was left at, which the browser cannot do for you here: it restores against the page being left, before the fragments arrive, so its guess is wrong as often as not.",
+				),
+			),
+			html.P(
+				html.Code(Text("fx-scroll")),
+				Text(
+					" is for the case the URL cannot tell apart. Paging is the one that comes up: the pager is at the bottom, and staying put after a click leaves you at the bottom of a fresh page. ",
+				),
+				html.Code(Text("fx-scroll=\"#results\"")),
+				Text(" puts you at the top of the new rows. It takes "),
+				html.Code(Text("top")),
+				Text(","),
+				Text(" "),
+				html.Code(Text("preserve")),
+				Text(", or any selector; on a form, a submitter's own"),
+				Text(" "),
+				html.Code(Text("fx-scroll")),
+				Text(" wins over the form's, the same way"),
+				Text(" "),
+				html.Code(Text("formaction")),
+				Text(
+					" does. A selector that matches nothing leaves the page where it is and warns, if ",
+				),
+				html.Code(Text("fx.dev.js")),
+				Text(" is loaded."),
 			),
 		),
 		Section(
