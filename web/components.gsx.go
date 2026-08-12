@@ -87,6 +87,23 @@ func Table(headers []string, rows [][]Node) Node {
 	return html.Table(html.THead(html.Tr(Group(ths))), html.TBody(Group(trs)))
 }
 
+// Bolt is the mark without its rounded square, for use inside a control that
+// already has a shape of its own.
+func Bolt() Node {
+	return html.SVG(
+		html.Class("bolt"),
+		Attr("viewBox", "0 0 32 32"),
+		html.Width("15"),
+		html.Height("15"),
+		Attr("aria-hidden", "true"),
+		El(
+			"path",
+			Attr("d", "M18 5 L9 18 h5 l-2 9 l9 -13 h-5 z"),
+			Attr("fill", "currentColor"),
+		),
+	)
+}
+
 // C is inline code.
 func C(s string) Node { return html.Code(Text(s)) }
 

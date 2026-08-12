@@ -94,6 +94,16 @@ func Table(headers []string, rows [][]Node) Node {
 	)
 }
 
+// Bolt is the mark without its rounded square, for use inside a control that
+// already has a shape of its own.
+func Bolt() Node {
+	return (
+		<svg class="bolt" viewBox="0 0 32 32" width="15" height="15" aria-hidden="true">
+			<path d="M18 5 L9 18 h5 l-2 9 l9 -13 h-5 z" fill="currentColor" />
+		</svg>
+	)
+}
+
 // C is inline code.
 func C(s string) Node { return <code>{s}</code> }
 

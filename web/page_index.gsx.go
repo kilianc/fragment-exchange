@@ -21,14 +21,61 @@ func IndexPage() Page {
 }
 
 func indexBody(c *Ctx) Node {
+	// The figure has two states and they are two URLs, because a picture whose
+	// state you cannot link to would be an odd thing to open this page with.
+	fxOn := c.R.URL.Query().Get("fx") == "on"
+
 	return Group{
 		html.Div(
 			html.Class("figure-wide hero-figure"),
-			html.Div(html.Class("diagram-scroll"), HookDiagram()),
-			html.P(
-				html.Class("figure-caption"),
-				Text(
-					"A page is a render function, and the URL is its only argument — which is precisely why everything a person can see has to live in there. fx does not change that function. It adds one header to the call, so the function can skip the parts of its own answer that nobody is going to look at.",
+			html.ID("hook-figure"),
+			html.Div(
+				html.Class("figure-controls"),
+				If(
+					!fxOn,
+					html.A(
+						html.Class("fx-enable"),
+						html.Href("/?fx=on"),
+						Attr("fx-target", "#hook-figure"),
+						Attr("fx-loading-target", "#progress-bar"),
+						Bolt(),
+						Text("Enable fx"),
+					),
+				),
+				If(fxOn, html.Span(html.Class("fx-on"), Bolt(), Text("fx is on"))),
+				If(
+					fxOn,
+					html.A(
+						html.Class("fx-off"),
+						html.Href("/"),
+						Attr("fx-target", "#hook-figure"),
+						Attr("fx-loading-target", "#progress-bar"),
+						Text("turn it off"),
+					),
+				),
+				html.Span(
+					html.Class("figure-hint"),
+					If(!fxOn, Text("Go on. Nothing on the server changes.")),
+					If(fxOn, Text("That is the entire difference.")),
+				),
+			),
+			html.Div(html.Class("diagram-scroll"), HookDiagram(fxOn)),
+			If(
+				!fxOn,
+				html.P(
+					html.Class("figure-caption"),
+					Text(
+						"And it is fine. It has always been fine. The only thing wrong with it is the flash.",
+					),
+				),
+			),
+			If(
+				fxOn,
+				html.P(
+					html.Class("figure-caption"),
+					Text(
+						"One attribute on the link. Nothing else about your site changes — not the URL, not the handler, not the page it sends back.",
+					),
 				),
 			),
 		),

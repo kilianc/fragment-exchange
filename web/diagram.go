@@ -282,109 +282,6 @@ func wrap(text string, x, y, width int) string {
 	return b.String()
 }
 
-// HookDiagram is the first thing on the home page.
-//
-// The base scene is server-side rendering and nothing else: a URL goes left to
-// a handler, a whole page comes back. The two boxes are deliberately not
-// aligned with each other, and the arrows are not parallel, because a picture
-// on a grid reads as a specification and this one is meant to read as an idea.
-//
-// fx is then a card that floats above that scene and overlaps it. It changes
-// nothing underneath — it adds one header on the way out and gets a smaller
-// answer back, drawn in the accent colour so you can see exactly which parts
-// of the picture are new.
-func HookDiagram() g.Node {
-	var b strings.Builder
-
-	fmt.Fprintf(&b, `<svg class="diagram hook" viewBox="0 0 1000 512" role="img" `+
-		`aria-label="A browser sends its URL and query string to a server, which renders a full page of HTML. `+
-		`Layered on top, fx sends the same URL with an FX-Target header and the server renders only that fragment.">`)
-
-	b.WriteString(defs())
-
-	// The sheet everything already sits on.
-	b.WriteString(`<rect class="k-sheet" x="18" y="64" width="964" height="430" rx="18" />`)
-	b.WriteString(`<text class="k-sheetlabel" x="42" y="94">SERVER-SIDE RENDERING</text>`)
-	b.WriteString(`<text class="k-equation" x="42" y="124">page = render(url)</text>`)
-	b.WriteString(`<text class="k-sheetsub" x="42" y="146">what you already have</text>`)
-
-	b.WriteString(hookServer())
-	b.WriteString(hookBrowser())
-	b.WriteString(hookExchange())
-	b.WriteString(hookFxLayer())
-
-	b.WriteString(`</svg>`)
-	return g.Raw(b.String())
-}
-
-// hookServer sits low on the left.
-func hookServer() string {
-	var b strings.Builder
-
-	b.WriteString(`<g>`)
-	b.WriteString(`<rect class="k-box" x="46" y="186" width="226" height="272" rx="12" />`)
-	b.WriteString(`<text class="k-cap" x="64" y="212">YOUR SERVER</text>`)
-
-	lines := []struct {
-		Y   int
-		T   string
-		Hot bool
-	}{
-		{242, "func reports(w, r) {", false},
-		{264, "  f := parseFilters(r)", true},
-		{286, "  rows := search(f)", false},
-		{308, "  sum := rollUp(f)", false},
-		{330, "  render(w, f, rows, sum)", false},
-		{352, "}", false},
-	}
-	for _, l := range lines {
-		cls := "k-code"
-		if l.Hot {
-			cls = "k-code k-code-hot"
-		}
-		fmt.Fprintf(&b, `<text class="%s" x="64" y="%d">%s</text>`, cls, l.Y, html.EscapeString(l.T))
-	}
-
-	b.WriteString(`<line class="k-rule" x1="64" y1="378" x2="254" y2="378" />`)
-	b.WriteString(`<text class="k-note" x="64" y="402">It reads the query</text>`)
-	b.WriteString(`<text class="k-note" x="64" y="422">string and renders</text>`)
-	b.WriteString(`<text class="k-note" x="64" y="442">a page. That is all.</text>`)
-	b.WriteString(`</g>`)
-
-	return b.String()
-}
-
-// hookBrowser sits high on the right, out of step with the server on purpose.
-func hookBrowser() string {
-	var b strings.Builder
-
-	b.WriteString(`<g>`)
-	b.WriteString(`<rect class="k-box" x="712" y="150" width="252" height="286" rx="12" />`)
-	b.WriteString(`<path class="k-chrome" d="M712 162 a12 12 0 0 1 12 -12 h228 a12 12 0 0 1 12 12 v20 h-252 z" />`)
-	for _, cx := range []int{730, 744, 758} {
-		fmt.Fprintf(&b, `<circle class="k-dot" cx="%d" cy="169" r="3.5" />`, cx)
-	}
-
-	b.WriteString(`<rect class="k-url" x="726" y="196" width="224" height="30" rx="8" />`)
-	b.WriteString(`<text class="k-urlt" x="738" y="216">/reports?status=open</text>`)
-
-	b.WriteString(`<rect class="k-page" x="726" y="240" width="224" height="180" rx="8" />`)
-	b.WriteString(`<rect class="k-bar" x="740" y="254" width="196" height="11" rx="3" />`)
-	b.WriteString(`<rect class="k-bar" x="740" y="273" width="130" height="8" rx="3" />`)
-
-	b.WriteString(`<rect class="k-frag" x="740" y="290" width="196" height="72" rx="6" />`)
-	b.WriteString(`<text class="k-fragt" x="750" y="308">#results</text>`)
-	for i := 0; i < 3; i++ {
-		fmt.Fprintf(&b, `<rect class="k-fragbar" x="750" y="%d" width="176" height="8" rx="2" />`, 316+i*13)
-	}
-
-	b.WriteString(`<rect class="k-bar" x="740" y="374" width="160" height="8" rx="3" />`)
-	b.WriteString(`<rect class="k-bar" x="740" y="391" width="110" height="8" rx="3" />`)
-	b.WriteString(`</g>`)
-
-	return b.String()
-}
-
 // arrow draws a line with a head at the far end, at whatever angle it runs.
 //
 // The head is a filled shape, so it takes its own class rather than the line's
@@ -409,55 +306,140 @@ func arrow(x1, y1, x2, y2 float64, cls string) string {
 		cls, x1, y1, x2, y2, head, x2-7, y2-4, angle, x2, y2)
 }
 
-// hookExchange is the round trip that was always there.
-func hookExchange() string {
+// HookDiagram is the first thing on the home page, and it has two states.
+//
+// It is deliberately the dumbest picture on the site, because it only has one
+// thing to say: a website answers a click with a whole page, and the only
+// thing fx changes is how much of the screen the browser bothers to replace.
+//
+// So everything that is not that is drawn identically in both states — the
+// click, the server, the answer, the address, every word. The one difference
+// is the blue area in the browser, which goes from the whole page to the one
+// block that changed. Nothing moves, nothing is added, an area shrinks. That
+// is the argument: the website did not change, the redraw did.
+func HookDiagram(fxOn bool) g.Node {
+	var b strings.Builder
+
+	label := "A browser asks for a page. The server sends back a whole page, and the browser " +
+		"replaces everything on the screen with it."
+	if fxOn {
+		label = "The same picture with fx on. The same click, the same server, the same whole page " +
+			"coming back — and the browser now replaces only the one block that changed."
+	}
+
+	fmt.Fprintf(&b, `<svg class="diagram hook" viewBox="0 0 1000 380" role="img" aria-label="%s">`,
+		html.EscapeString(label))
+
+	b.WriteString(defs())
+
+	b.WriteString(`<rect class="k-sheet" x="8" y="8" width="984" height="364" rx="16" />`)
+	b.WriteString(`<text class="k-sheetlabel" x="34" y="42">HOW A WEBSITE WORKS</text>`)
+	b.WriteString(`<text class="k-headline" x="34" y="74">Every website you have ever used works like this.</text>`)
+
+	b.WriteString(hookServer(fxOn))
+	b.WriteString(hookExchange())
+	b.WriteString(hookBrowser(fxOn))
+	b.WriteString(hookPunchline(fxOn))
+
+	b.WriteString(`</svg>`)
+	return g.Raw(b.String())
+}
+
+// hookServer is the half of the picture that fx never touches, which is why
+// the only thing fx adds to it is a stamp saying so.
+func hookServer(fxOn bool) string {
 	var b strings.Builder
 
 	b.WriteString(`<g>`)
+	b.WriteString(`<rect class="k-box" x="34" y="104" width="240" height="134" rx="12" />`)
+	b.WriteString(`<text class="k-cap" x="52" y="130">YOUR SERVER</text>`)
 
-	// Out: the URL, which is the whole of the input.
-	b.WriteString(`<text class="k-wire" x="500" y="214" text-anchor="middle">GET /reports?status=open</text>`)
-	b.WriteString(arrow(706, 230, 284, 252, "k-line"))
-	b.WriteString(`<text class="k-say" x="500" y="276" text-anchor="middle">The URL and its query string are the entire input.</text>`)
+	// A page, because that is the only thing it makes.
+	b.WriteString(`<rect class="k-page" x="52" y="150" width="54" height="68" rx="6" />`)
+	for i, w := range []int{34, 26, 34, 20} {
+		fmt.Fprintf(&b, `<rect class="k-bar" x="62" y="%d" width="%d" height="6" rx="2" />`, 162+i*13, w)
+	}
 
-	// Back: a whole page.
-	b.WriteString(arrow(284, 314, 706, 298, "k-line k-line-dash"))
-	b.WriteString(`<text class="k-wire" x="500" y="338" text-anchor="middle">200 — a full page of HTML</text>`)
-	b.WriteString(`<text class="k-say" x="500" y="358" text-anchor="middle">The server computes the page. The browser paints it.</text>`)
+	b.WriteString(`<text class="k-note" x="122" y="176">Renders a whole</text>`)
+	b.WriteString(`<text class="k-note" x="122" y="196">page. As always.</text>`)
+
+	if fxOn {
+		b.WriteString(`<rect class="k-chip" x="54" y="226" width="186" height="24" rx="12" />`)
+		b.WriteString(`<text class="k-chipt" x="147" y="243" text-anchor="middle">nothing changed here</text>`)
+	}
 
 	b.WriteString(`</g>`)
 	return b.String()
 }
 
-// hookFxLayer is the card that floats over the scene, plus the one extra round
-// trip it adds. It breaks the top of the base sheet, which is the point.
-func hookFxLayer() string {
+// hookExchange is the round trip, and it is the same round trip either way.
+// The whole page comes back with fx on, exactly as it did before — that is the
+// deal, and the line under it says so in both states.
+func hookExchange() string {
+	return `<g>
+    <text class="k-wire" x="455" y="140" text-anchor="middle">you click a link</text>
+    ` + arrow(630, 156, 282, 172, "k-line") + `
+    ` + arrow(282, 210, 630, 196, "k-line k-line-dash") + `
+    <text class="k-wire" x="455" y="236" text-anchor="middle">a whole page comes back</text>
+    <text class="k-say" x="455" y="258" text-anchor="middle">every time — with fx or without it</text>
+  </g>`
+}
+
+// hookBrowser holds the one thing that changes: the blue area is what the
+// browser replaces. Off, it is the entire page. On, it is the list that
+// changed. The page itself is drawn on top of it, identically both times.
+func hookBrowser(fxOn bool) string {
 	var b strings.Builder
 
 	b.WriteString(`<g>`)
+	b.WriteString(`<rect class="k-box" x="636" y="96" width="328" height="232" rx="12" />`)
+	b.WriteString(`<path class="k-chrome" d="M636 108 a12 12 0 0 1 12 -12 h304 a12 12 0 0 1 12 12 v20 h-328 z" />`)
+	for _, cx := range []int{654, 668, 682} {
+		fmt.Fprintf(&b, `<circle class="k-dot" cx="%d" cy="115" r="3.5" />`, cx)
+	}
 
-	// The layer itself, lifted off the page.
-	b.WriteString(`<g filter="url(#fx-lift)">`)
-	b.WriteString(`<rect class="k-layer" x="286" y="16" width="600" height="104" rx="14" />`)
+	b.WriteString(`<rect class="k-url" x="650" y="132" width="300" height="26" rx="8" />`)
+	b.WriteString(`<text class="k-urlt" x="662" y="150">/reports?status=open</text>`)
+
+	b.WriteString(`<rect class="k-page" x="650" y="170" width="300" height="142" rx="8" />`)
+
+	// What gets replaced.
+	if fxOn {
+		b.WriteString(`<rect class="k-swap" x="658" y="210" width="284" height="60" rx="6" />`)
+	} else {
+		b.WriteString(`<rect class="k-swap" x="656" y="176" width="288" height="130" rx="6" />`)
+	}
+
+	// The page, unchanged, over the top of it.
+	b.WriteString(`<rect class="k-bar" x="666" y="184" width="150" height="11" rx="3" />`)
+	b.WriteString(`<rect class="k-bar" x="666" y="203" width="96" height="7" rx="3" />`)
+	for i := 0; i < 3; i++ {
+		fmt.Fprintf(&b, `<rect class="k-bar k-bar-list" x="666" y="%d" width="268" height="10" rx="3" />`, 220+i*15)
+	}
+	b.WriteString(`<rect class="k-bar" x="666" y="282" width="160" height="7" rx="3" />`)
+	b.WriteString(`<rect class="k-bar" x="666" y="295" width="110" height="7" rx="3" />`)
+
+	swapped := "all of it — replaced"
+	if fxOn {
+		swapped = "just this — replaced"
+	}
+	fmt.Fprintf(&b, `<text class="k-swapt" x="800" y="350" text-anchor="middle">%s</text>`, swapped)
+
 	b.WriteString(`</g>`)
-	b.WriteString(`<text class="k-layerlabel" x="310" y="46">fx — A LAYER ON TOP</text>`)
-	b.WriteString(`<text class="k-layertext" x="310" y="72">Change nothing underneath. Send the same URL,</text>`)
-	b.WriteString(`<text class="k-layertext" x="310" y="94">and one header saying which part you will use.</text>`)
-	b.WriteString(`<text class="k-header" x="310" y="112">FX-Target: #results</text>`)
-
-	// It reaches down into the scene it is sitting on.
-	b.WriteString(`<path class="k-leader" d="M770 120 C770 138 826 132 838 148" />`)
-
-	// The second round trip, in the layer's colour.
-	b.WriteString(`<text class="k-wire k-wire-fx" x="500" y="386" text-anchor="middle">GET /reports?status=open + FX-Target: #results</text>`)
-	b.WriteString(arrow(706, 414, 284, 400, "k-line k-line-fx"))
-
-	b.WriteString(arrow(284, 436, 706, 422, "k-line k-line-fx k-line-dash"))
-	b.WriteString(`<text class="k-wire k-wire-fx" x="500" y="460" text-anchor="middle">200 — just #results</text>`)
-
-	b.WriteString(`<rect class="k-chip" x="742" y="448" width="196" height="26" rx="13" />`)
-	b.WriteString(`<text class="k-chipt" x="840" y="465" text-anchor="middle">same inputs, less work</text>`)
-	b.WriteString(`</g>`)
-
 	return b.String()
+}
+
+// hookPunchline is what the reader is supposed to leave with, in two lines.
+func hookPunchline(fxOn bool) string {
+	if fxOn {
+		return `<g>
+    <text class="k-punch k-punch-fx" x="34" y="300">fx puts in just the part that changed.</text>
+    <text class="k-punchsub" x="34" y="326">No flash. You keep your place. Your server never knew the difference.</text>
+  </g>`
+	}
+
+	return `<g>
+    <text class="k-punch" x="34" y="300">The browser throws it all away and paints a new one.</text>
+    <text class="k-punchsub" x="34" y="326">A flash, and you lose your place — to change one list.</text>
+  </g>`
 }
