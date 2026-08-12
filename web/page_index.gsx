@@ -386,6 +386,15 @@ func reports(w http.ResponseWriter, r *http.Request) {
 				Code("bash", `curl -O https://fx.ciuffolo.com/fx.js`),
 
 				<p>
+					Or pin a tagged release from the CDN, hash and all. Keep both: the pin stops the file
+					changing under you, and the hash is what makes the pin mean anything.
+				</p>,
+
+				Snippet("html", "index.html", `
+<script src="https://cdn.jsdelivr.net/gh/kilianc/fragment-exchange@v1.0.0/fx.js" integrity="sha384-RTr3W+5w6KYGgiH4UREXExO1cFu9JHkLYI6PUYXbz2BZoCHDCC1+y/Kyh18nd1bL" crossorigin="anonymous"></script>
+`),
+
+				<p>
 					If you write Go, the repository also ships a small package that embeds the script and
 					answers the header:
 				</p>,

@@ -3,6 +3,7 @@ name: ci
 on:
   push:
     branches: [main]
+    tags: ['v*']
   pull_request:
 
 jobs:
@@ -43,3 +44,14 @@ jobs:
 
       - name: The deploy target builds
         run: go build -o /dev/null ./cmd/server
+
+      # On a tag, the tag name is passed in so it must match the version in
+      # fx.js. jsDelivr serves tags immutably, so a wrong hash or version
+      # published here cannot be corrected in place — it costs a version.
+      - name: Release consistency
+        run: |
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            bin/check-release "${GITHUB_REF_NAME}"
+          else
+            bin/check-release
+          fi

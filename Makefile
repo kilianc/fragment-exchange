@@ -38,6 +38,13 @@ check: ## What CI runs: generated files current, formatted, vetted, tested
 	@test -z "$$(gofmt -l . | grep -v '\.gsx\.go$$')" || { echo "gofmt:"; gofmt -l . | grep -v '\.gsx\.go$$'; exit 1; }
 	go vet ./...
 	go test -race ./...
+	bin/check-release
+
+.PHONY: sri
+sri: ## Print the integrity hashes for the published scripts
+	@for f in fx.js fx.dev.js; do \
+		printf '%-10s sha384-%s\n' "$$f" "$$(openssl dgst -sha384 -binary $$f | openssl base64 -A)"; \
+	done
 
 .PHONY: fmt
 fmt: ## Format Go and GSX sources

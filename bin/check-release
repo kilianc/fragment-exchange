@@ -1,0 +1,152 @@
+#!/bin/sh
+#
+# check-release — verify the repository is releasable, and that every version
+# and hash we publish agrees with the file we actually ship.
+#
+# Usage:
+#   bin/check-release            # check the working tree
+#   bin/check-release v1.0.0     # also require fx.version to match the tag
+#
+# Checks:
+#   1. fx.js declares exactly one semver version.
+#   2. CHANGELOG.md has an entry for it.
+#   3. Every SRI hash we publish matches the file it is advertised for.
+#   4. Every CDN URL is pinned, and pinned to the declared version.
+#   5. If a tag is given, it is v<version>.
+#
+# Releases are git tags served by jsDelivr, and jsDelivr serves tags immutably:
+# a wrong hash published under a tag cannot be corrected in place, it needs a
+# new version. This runs in CI on the tag push, before that becomes permanent.
+#
+# POSIX sh + openssl. No toolchain, matching the library it releases.
+
+set -eu
+
+cd "$(dirname "$0")/.."
+
+# Loop bodies in a pipeline run in a subshell and cannot set a variable here,
+# so failures are recorded in a file. Nothing can fail silently.
+failures=$(mktemp)
+trap 'rm -f "$failures"' EXIT
+
+fail() {
+  printf 'FAIL  %s\n' "$1" >&2
+  printf 'x\n' >>"$failures"
+}
+
+pass() {
+  printf 'ok    %s\n' "$1"
+}
+
+failed() {
+  [ -s "$failures" ]
+}
+
+sri() {
+  printf 'sha384-%s' "$(openssl dgst -sha384 -binary "$1" | openssl base64 -A)"
+}
+
+# Files that publish CDN URLs and integrity hashes to users. The site's .gsx
+# sources and their generated .gsx.go counterparts both carry the snippet, so
+# both are checked; a stale hash in either is a stale hash on the site.
+DOC_FILES="README.md $(find web -name '*.gsx' -o -name '*.gsx.go' 2>/dev/null | sort | tr '\n' ' ')"
+
+# 1. Version is declared exactly once and parses as semver.
+versions=$(sed -n "s/.*version: '\([^']*\)'.*/\1/p" fx.js)
+count=$(printf '%s' "$versions" | grep -c . || true)
+
+if [ "$count" -ne 1 ]; then
+  fail "fx.js must declare exactly one version string (found $count)"
+  printf '\nRelease check failed.\n' >&2
+  exit 1
+fi
+
+version=$versions
+
+if printf '%s' "$version" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
+  pass "fx.js declares version $version"
+else
+  fail "fx.js version '$version' is not semver"
+fi
+
+# 2. The changelog documents this version.
+if [ ! -f CHANGELOG.md ]; then
+  fail "CHANGELOG.md is missing"
+elif grep -qE "^## +v?$version( |\$)" CHANGELOG.md; then
+  pass "CHANGELOG.md has an entry for $version"
+else
+  fail "CHANGELOG.md has no '## $version' entry"
+fi
+
+# 3. Advertised SRI hashes match the files they name.
+#
+# A <script> tag spans several lines, so the filename and the integrity
+# attribute are rarely on the same line. Each hash is attributed to the most
+# recent filename seen above it.
+for doc in $DOC_FILES; do
+  [ -f "$doc" ] || continue
+
+  awk '
+    /fx\.dev\.js/ { subject = "fx.dev.js" }
+    /fx\.js/      { if ($0 !~ /fx\.dev\.js/) subject = "fx.js" }
+    match($0, /sha384-[A-Za-z0-9+\/=]+/) {
+      print NR "\t" (subject == "" ? "?" : subject) "\t" substr($0, RSTART, RLENGTH)
+    }
+  ' "$doc" | while IFS="$(printf '\t')" read -r lineno subject found; do
+    if [ "$subject" = "?" ]; then
+      fail "$doc:$lineno carries an SRI hash but no file is named above it"
+      continue
+    fi
+
+    expected=$(sri "$subject")
+
+    if [ "$found" = "$expected" ]; then
+      pass "$doc:$lineno SRI matches $subject"
+    else
+      fail "$doc:$lineno has a stale SRI hash for $subject"
+      printf '        expected %s\n' "$expected" >&2
+      printf '        found    %s\n' "$found" >&2
+    fi
+  done
+done
+
+# 4. Every CDN URL is pinned, and pinned to the version we are shipping.
+for doc in $DOC_FILES; do
+  [ -f "$doc" ] || continue
+
+  awk '
+    /cdn\.jsdelivr\.net/ {
+      if (match($0, /fragment-exchange@[^\/"]+/))
+        print NR "\t" substr($0, RSTART + 18, RLENGTH - 18)
+      else
+        print NR "\t"
+    }
+  ' "$doc" | while IFS="$(printf '\t')" read -r lineno pinned; do
+    # URLs pin the exact git tag (v1.0.0); fx.js declares the bare semver.
+    if [ -z "$pinned" ]; then
+      fail "$doc:$lineno has an unpinned CDN URL — pin it to @v$version"
+    elif [ "${pinned#v}" = "$version" ]; then
+      pass "$doc:$lineno pins @$pinned"
+    else
+      fail "$doc:$lineno pins @$pinned but fx.js declares $version"
+    fi
+  done
+done
+
+# 5. A tag, if given, must agree with the declared version.
+if [ $# -gt 0 ]; then
+  tag=$1
+
+  if [ "$tag" = "v$version" ]; then
+    pass "tag $tag matches fx.js version"
+  else
+    fail "tag $tag does not match fx.js version $version (expected v$version)"
+  fi
+fi
+
+if failed; then
+  printf '\nRelease check failed.\n' >&2
+  exit 1
+fi
+
+printf '\nRelease check passed.\n'

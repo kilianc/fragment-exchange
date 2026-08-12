@@ -75,11 +75,42 @@ curl -O https://fx.ciuffolo.com/fx.js
 ```
 
 Copy it into your project. There is no package, no lockfile and no transitive dependency to
-audit, because there is nothing to depend on.
+audit, because there is nothing to depend on. That URL always serves the latest release, so
+what you get today is what you keep — the file is yours once you have it.
+
+If you would rather not vendor it, tagged releases are on jsDelivr:
+
+```html
+<script src="https://cdn.jsdelivr.net/gh/kilianc/fragment-exchange@v1.0.0/fx.js" integrity="sha384-RTr3W+5w6KYGgiH4UREXExO1cFu9JHkLYI6PUYXbz2BZoCHDCC1+y/Kyh18nd1bL" crossorigin="anonymous"></script>
+```
+
+Pin the tag and keep the hash. An unpinned URL hands someone else the right to change the
+JavaScript on your pages whenever they deploy, and the `integrity` attribute is what makes
+the pin mean anything — the browser refuses the file if a single byte differs. Tags are
+immutable, so both stay true forever. Vendoring is still the better answer if you have
+somewhere to put the file: it is one request you own rather than one you rent.
 
 `fx.dev.js` is an optional development companion: it turns on logging and warns about the
 mistakes that are otherwise silent — duplicate ids, a hungry element with no id, a target
 that matches nothing. Load it in development, never in production.
+
+## Versioning
+
+Semver, and the version covers three things:
+
+| | |
+|---|---|
+| The attributes | `fx-target`, `fx-loading-target`, `fx-hungry`, `fx-interval` |
+| The `fx` object | `fx.timeout`, `fx.clickFallback`, `fx.version` |
+| The `FX-Target` header | What the browser sends, and what a handler may assume |
+
+That third one is easy to forget and the most expensive to get wrong. A server reading
+`FX-Target` cannot be redeployed in lockstep with a script already sitting in someone's
+browser cache, so changing what that header means is a breaking change even when the
+markup and the runtime object are untouched.
+
+Being at `1.0.0` is the promise that follows from that: none of the three changes without a
+`2.0.0`.
 
 ## Go
 
@@ -158,6 +189,25 @@ make check    # what CI runs
 The site is written in [GSX](https://github.com/kilianc/gsx) and served by a Go binary, so
 `.gsx` files are source and `.gsx.go` files are generated — run `make gen` after editing
 one.
+
+## Releasing
+
+A release is a git tag. There is no registry, no publish step and no build artefact — the
+tag is the release, jsDelivr serves it from the tag, and `fx.ciuffolo.com/fx.js` follows
+whatever is on `main`.
+
+1. Bump `version` in `fx.js`.
+2. Update the pinned URLs and `integrity` hashes wherever they appear — `README.md` and the
+   site. `make sri` prints the current ones.
+3. Write the `CHANGELOG.md` entry.
+4. `bin/check-release v1.0.0`, then commit and merge to `main`.
+5. `git tag v1.0.0 && git push origin v1.0.0`.
+
+`bin/check-release` runs in CI on every pull request, and again on the tag push with the
+tag name passed in. It fails if the declared version, the changelog, the published hashes
+or the pinned URLs disagree with each other or with the file being shipped. That check
+matters most on the tag: jsDelivr serves tags immutably, so a wrong hash published under
+`v1.0.0` cannot be fixed in place — it costs a version number.
 
 ## Deploying the site
 
