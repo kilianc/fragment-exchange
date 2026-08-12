@@ -415,52 +415,55 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
 /* ---- hook diagram --------------------------------------------------- */
 
 .hook { margin: 0 0 6px; }
-.hero-figure { margin-top: 4px; margin-bottom: 26px; }
 
-.h-kicker     { font: 600 11px var(--mono); letter-spacing: 0.11em; }
-.h-kicker-off { fill: var(--fg-faint); }
-.h-kicker-on  { fill: var(--accent); }
+.k-kicker { fill: var(--fg-faint); font: 600 11px var(--mono); letter-spacing: 0.11em; }
 
-.h-cap { fill: var(--fg-faint); font: 600 9.5px var(--mono); letter-spacing: 0.12em; }
+.k-frame  { fill: var(--bg-raised); stroke: var(--border); stroke-width: 1; }
+.k-chrome { fill: var(--bg-inset); }
+.k-dot    { fill: var(--border-strong); }
 
-.h-frame     { fill: var(--bg-raised); stroke-width: 1; }
-.h-frame-off { stroke: var(--border); }
-.h-frame-on  { stroke: var(--border-strong); }
+/* The address bar carries the argument, so it is the only thing in the base
+   drawing that gets the accent. */
+.k-url  { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.2; }
+.k-urlt { fill: var(--accent); font: 600 13px var(--mono); }
 
-.h-url     { }
-.h-url-off { fill: var(--bg-inset); }
-.h-url-on  { fill: var(--accent-soft); stroke: var(--accent); stroke-opacity: 0.5; }
+.k-callout   { fill: var(--accent); font: 600 11.5px var(--sans); }
+.k-callout-2 { fill: var(--fg-muted); font: 11.5px var(--sans); }
 
-.h-urlt     { font: 13px var(--mono); }
-.h-urlt-off { fill: var(--fg-faint); }
-.h-urlt-on  { fill: var(--accent); font-weight: 600; }
-.h-urlnote  { fill: var(--accent); font: 600 10.5px var(--mono); }
+.k-page    { fill: var(--bg); stroke: var(--border); stroke-width: 1; }
+.k-bar     { fill: var(--bg-inset); }
+.k-frag    { fill: none; stroke: var(--accent); stroke-width: 1.4; stroke-dasharray: 4 3; }
+.k-fragt   { fill: var(--accent); font: 600 11px var(--mono); }
+.k-fragbar { fill: var(--accent); opacity: 0.28; }
 
-.h-block     { }
-.h-block-off { fill: var(--bg-inset); }
-.h-block-on  { fill: var(--accent); }
+.k-code     { fill: var(--fg-muted); font: 12.5px var(--mono); }
+.k-code-hot { fill: var(--accent); font-weight: 600; }
+.k-rule     { stroke: var(--border); stroke-width: 1; }
+.k-note     { fill: var(--fg); font: 13px var(--sans); }
+.k-note-dim { fill: var(--fg-faint); }
 
-.h-blockt     { font: 12px var(--mono); }
-.h-blockt-off { fill: var(--fg-muted); }
-.h-blockt-on  { fill: var(--accent-fg); font-weight: 600; }
+.k-lane    { fill: var(--fg-faint); font: 600 10.5px var(--mono); letter-spacing: 0.09em; }
+.k-lane-fx { fill: var(--accent); }
 
-.h-line     { stroke-width: 1.5; }
-.h-line-off { stroke: var(--border-strong); }
-.h-line-on  { stroke: var(--accent); }
-.h-head-off { fill: var(--border-strong); }
-.h-head-on  { fill: var(--accent); }
+.k-wire     { fill: var(--fg-muted); font: 12px var(--mono); }
+.k-wire-dim { fill: var(--fg-faint); }
+.k-wire-fx  { fill: var(--accent); font-weight: 600; }
 
-.h-wire     { font: 11px var(--mono); }
-.h-wire-off { fill: var(--fg-faint); }
-.h-wire-on  { fill: var(--accent); font-weight: 600; }
+.k-line      { stroke: var(--border-strong); stroke-width: 1.5; }
+.k-line-dash { stroke-dasharray: 5 4; }
+.k-line-fx   { stroke: var(--accent); }
+.k-head      { fill: var(--border-strong); }
+.k-head-fx   { fill: var(--accent); }
 
-.h-server     { font: 13.5px var(--sans); }
-.h-server-off { fill: var(--fg-muted); }
-.h-server-on  { fill: var(--fg); font-weight: 600; }
+/* The overlay. Dashed, tinted, sitting on top of a picture that was already
+   complete without it. */
+.k-band { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.2; stroke-dasharray: 6 4; opacity: 0.75; }
 
-.h-note     { font: 13px var(--sans); }
-.h-note-off { fill: var(--fg-faint); }
-.h-note-on  { fill: var(--fg); }
+.k-outcome    { fill: var(--fg-muted); font: 13px var(--sans); }
+.k-outcome-fx { fill: var(--accent); font-weight: 600; }
+
+.k-chip  { fill: var(--accent); }
+.k-chipt { fill: var(--accent-fg); font: 600 12px var(--mono); }
 
 /* ---- lifecycle diagram --------------------------------------------- */
 
