@@ -6,6 +6,7 @@
 # Usage:
 #   bin/check-release            # check the working tree
 #   bin/check-release v1.0.0     # also require fx.version to match the tag
+#   bin/check-release --cdn      # also fetch every published URL and compare
 #
 # Checks:
 #   1. fx.js declares exactly one semver version.
@@ -13,6 +14,12 @@
 #   3. Every SRI hash we publish matches the file it is advertised for.
 #   4. Every CDN URL is pinned, and pinned to the declared version.
 #   5. If a tag is given, it is v<version>.
+#   6. With --cdn, every published URL resolves and serves those exact bytes.
+#
+# Check 6 needs the network and the tag to exist, so it is opt-in and runs in
+# CI on tag pushes. The first release advertised a URL that returned 404 — the
+# repository was private, and jsDelivr can only serve public ones. Everything
+# agreed with everything else; nobody had asked the CDN.
 #
 # Releases are git tags served by jsDelivr, and jsDelivr serves tags immutably:
 # a wrong hash published under a tag cannot be corrected in place, it needs a
@@ -23,6 +30,13 @@
 set -eu
 
 cd "$(dirname "$0")/.."
+
+check_cdn=false
+
+if [ "${1-}" = "--cdn" ]; then
+  check_cdn=true
+  shift
+fi
 
 # Loop bodies in a pipeline run in a subshell and cannot set a variable here,
 # so failures are recorded in a file. Nothing can fail silently.
@@ -142,6 +156,48 @@ if [ $# -gt 0 ]; then
   else
     fail "tag $tag does not match fx.js version $version (expected v$version)"
   fi
+fi
+
+# 6. Every URL we publish resolves, and serves the bytes we published a hash
+# for. A tag is new when this runs, so allow jsDelivr a moment to see it.
+if $check_cdn; then
+  urls=$(for doc in $DOC_FILES; do
+    [ -f "$doc" ] || continue
+    grep -oE 'https://cdn\.jsdelivr\.net/[^"[:space:]]+' "$doc" || true
+  done | sort -u)
+
+  if [ -z "$urls" ]; then
+    fail "--cdn was given but no CDN URLs are published anywhere"
+  fi
+
+  for url in $urls; do
+    subject=${url##*/}
+    body=$(mktemp)
+    code=""
+
+    # jsDelivr indexes a fresh tag within a minute or so; a 404 immediately
+    # after the push is normal, a 404 after the retries is not.
+    for attempt in 1 2 3 4 5; do
+      code=$(curl -sS -o "$body" -w '%{http_code}' "$url" || echo 000)
+      [ "$code" = "200" ] && break
+      [ "$attempt" = "5" ] || sleep 15
+    done
+
+    if [ "$code" != "200" ]; then
+      fail "$url returned HTTP $code"
+      printf '        %s\n' "$(head -c 200 "$body")" >&2
+    elif [ ! -f "$subject" ]; then
+      fail "$url serves $subject, which is not in this repository"
+    elif cmp -s "$body" "$subject"; then
+      pass "$url serves the same bytes as $subject"
+    else
+      fail "$url does not serve this repository's $subject"
+      printf '        served   %s\n' "$(sri "$body")" >&2
+      printf '        expected %s\n' "$(sri "$subject")" >&2
+    fi
+
+    rm -f "$body"
+  done
 fi
 
 if failed; then

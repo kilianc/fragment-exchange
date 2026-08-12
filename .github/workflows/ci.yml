@@ -55,3 +55,10 @@ jobs:
           else
             bin/check-release
           fi
+
+      # Only on a tag: the URLs we publish are pinned to one, so there is
+      # nothing to fetch before it exists. This is the check that would have
+      # caught v1.0.0 advertising a URL jsDelivr could not serve.
+      - name: The published CDN URLs resolve
+        if: github.ref_type == 'tag'
+        run: bin/check-release --cdn "${GITHUB_REF_NAME}"
