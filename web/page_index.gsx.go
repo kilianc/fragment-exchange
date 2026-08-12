@@ -151,6 +151,7 @@ func indexBody(c *Ctx) Node {
 				),
 			),
 		),
+		browserFreebies(),
 		Section(
 			"wanted",
 			"What I actually wanted",
@@ -534,4 +535,343 @@ fx.Wants(r, "#summary")                 // render this fragment?
 			),
 		),
 	}
+}
+
+// browserFreebies is the inventory: everything a document gets for nothing,
+// and therefore everything you take ownership of the moment you stop shipping
+// documents. It is deliberately exhaustive. The length is the argument.
+func browserFreebies() Node {
+	return Section("free", "What the browser already does for you",
+		html.P(
+			Text(
+				"The bill on the previous section is abstract. Here is the concrete version — the things a browser does for a plain HTML page, for free, that a client-side application has to reimplement, approximate, or quietly do without.",
+			),
+		),
+
+		html.H3(Text("Navigation and history")),
+		html.Ul(
+			html.Li(
+				html.Strong(Text("Back and forward.")),
+				Text(" Correct by construction, because each screen was a real navigation."),
+			),
+			html.Li(
+				html.Strong(Text("Scroll restoration.")),
+				Text(
+					" Going back returns you to where you were on the page, not to the top of it.",
+				),
+			),
+			html.Li(
+				html.Strong(Text("Instant back and forward.")),
+				Text(" The bfcache can restore a whole previous page without a request."),
+			),
+			html.Li(
+				html.Strong(Text("Bookmarks.")),
+				Text(" A screen you can save and come back to next month."),
+			),
+			html.Li(
+				html.Strong(Text("Open in a new tab.")),
+				Text(" Cmd-click, middle-click, right-click, drag to the tab bar."),
+			),
+			html.Li(
+				html.Strong(Text("Session restore.")),
+				Text(
+					" Reopen the browser after a crash and your tabs come back, on the right screens.",
+				),
+			),
+			html.Li(
+				html.Strong(Text("History search.")),
+				Text(
+					" Type half a remembered word into the address bar and find the page again.",
+				),
+			),
+			html.Li(
+				html.Strong(Text("Refresh.")),
+				Text(
+					" A guarantee that what you are looking at can be produced again from scratch.",
+				),
+			),
+		),
+
+		html.H3(Text("Addressability")),
+		html.Ul(
+			html.Li(
+				html.Strong(Text("A URL for every screen.")),
+				Text(" Which is to say: a way to talk about a screen at all."),
+			),
+			html.Li(
+				html.Strong(Text("Query strings.")),
+				Text(
+					" Search, filters, sort order and pagination, with a format everything understands.",
+				),
+			),
+			html.Li(
+				html.Strong(Text("Fragment anchors.")),
+				Text(" Deep links into a section of a long page."),
+			),
+			html.Li(
+				html.Strong(Text("The document title.")),
+				Text(
+					" Names your tab, your history entry, your bookmark and your window switcher.",
+				),
+			),
+			html.Li(
+				html.Strong(Text("Link previews.")),
+				Text(" Paste the URL into Slack and something sensible unfurls."),
+			),
+		),
+
+		html.H3(Text("Sending data to the server")),
+		html.Ul(
+			html.Li(
+				html.Strong(Text("Forms.")),
+				Text(
+					" GET puts the fields in the query string, POST puts them in the body. No request code.",
+				),
+			),
+			html.Li(
+				html.Strong(Text("The right encoding.")),
+				Text(
+					" Urlencoded, or multipart when there is a file. Chosen for you, correctly.",
+				),
+			),
+			html.Li(
+				html.Strong(Text("File upload.")),
+				Text(
+					" The operating system's file picker, streamed to the server, with progress.",
+				),
+			),
+			html.Li(
+				html.Strong(Text("Native validation.")),
+				Text(" "),
+				html.Code(Text("required")),
+				Text(", "),
+				html.Code(Text("type=\"email\"")),
+				Text(", "),
+				html.Code(Text("pattern")),
+				Text(", "),
+				html.Code(Text("min")),
+				Text(" and "),
+				html.Code(Text("max")),
+				Text(" — with messages already translated into the user's language."),
+			),
+			html.Li(
+				html.Strong(Text("Enter to submit.")),
+				Text(" And the focus behaviour that goes with it."),
+			),
+			html.Li(
+				html.Strong(Text("Knowing which button was pressed.")),
+				Text(" The submitter's name and value, and only that submitter's."),
+			),
+			html.Li(
+				html.Strong(Text("Password managers.")),
+				Text(" They find the fields, fill them, and offer to save what you typed."),
+			),
+			html.Li(
+				html.Strong(Text("Autofill.")),
+				Text(" Addresses, cards, and one-time codes lifted out of an incoming SMS."),
+			),
+		),
+
+		html.H3(Text("Loading, and what happens when it fails")),
+		html.Ul(
+			html.Li(
+				html.Strong(Text("The loading indicator.")),
+				Text(" The spinner in the tab, and a stop button that works."),
+			),
+			html.Li(
+				html.Strong(Text("Streaming.")),
+				Text(" HTML paints as it arrives. Nothing waits for the last byte."),
+			),
+			html.Li(
+				html.Strong(Text("Network error pages.")),
+				Text(" Written, tested and translated by people who are not you."),
+			),
+			html.Li(
+				html.Strong(Text("Offline.")),
+				Text(" A state the browser understands and tells the user about."),
+			),
+			html.Li(
+				html.Strong(Text("Transport-level retries and timeouts.")),
+				Text(" Under the request, where they belong."),
+			),
+		),
+
+		html.H3(Text("The network")),
+		html.Ul(
+			html.Li(
+				html.Strong(Text("HTTP caching.")),
+				Text(" "),
+				html.Code(Text("Cache-Control")),
+				Text(", "),
+				html.Code(Text("ETag")),
+				Text(
+					" and conditional requests — a caching layer you configure rather than write.",
+				),
+			),
+			html.Li(
+				html.Strong(Text("Compression.")),
+				Text(" Negotiated per request, applied to your HTML."),
+			),
+			html.Li(
+				html.Strong(Text("Connection reuse and multiplexing.")),
+				Text(" Free with HTTP/2, and nothing to tune."),
+			),
+			html.Li(
+				html.Strong(Text("Redirects.")),
+				Text(" Followed, with the address bar updated to where you actually landed."),
+			),
+			html.Li(
+				html.Strong(Text("Cookies.")),
+				Text(" Scoping, expiry, and "),
+				html.Code(Text("HttpOnly")),
+				Text(", "),
+				html.Code(Text("SameSite")),
+				Text(" and "),
+				html.Code(Text("Secure")),
+				Text(" meaning what they say."),
+			),
+			html.Li(
+				html.Strong(Text("Authentication challenges.")),
+				Text(" Handled by the browser, including the credential storage."),
+			),
+			html.Li(
+				html.Strong(Text("Range requests.")),
+				Text(" Resumable downloads and seekable media."),
+			),
+			html.Li(
+				html.Strong(Text("Preload and prefetch hints.")),
+				Text(" Declared in markup, scheduled by the browser."),
+			),
+		),
+
+		html.H3(Text("Input and accessibility")),
+		html.Ul(
+			html.Li(
+				html.Strong(Text("Focus order.")),
+				Text(" Tab moves through the document in source order, without a manager."),
+			),
+			html.Li(
+				html.Strong(Text("Keyboard activation.")),
+				Text(" Enter on a link, Space on a button, Escape on a dialog."),
+			),
+			html.Li(
+				html.Strong(Text("Landmarks and roles.")),
+				Text(" Free with real elements, and hand-written once everything is a "),
+				html.Code(Text("<div>")),
+				Text("."),
+			),
+			html.Li(
+				html.Strong(Text("Page-change announcements.")),
+				Text(" A navigation tells assistive technology that something happened."),
+			),
+			html.Li(
+				html.Strong(Text("Find in page.")),
+				Text(" Cmd-F searches text that is actually in the document."),
+			),
+			html.Li(
+				html.Strong(Text("Selection and copy.")),
+				Text(
+					" Including copying a table into a spreadsheet and having it paste as a table.",
+				),
+			),
+			html.Li(
+				html.Strong(Text("Zoom and reflow.")),
+				Text(" Text scales and the layout keeps working."),
+			),
+			html.Li(
+				html.Strong(Text("User preferences.")),
+				Text(" Reduced motion, high contrast, forced colours, minimum font size."),
+			),
+			html.Li(
+				html.Strong(Text("The context menu.")),
+				Text(" Copy link address, open in new tab, search for this selection."),
+			),
+		),
+
+		html.H3(Text("The life of a page after you ship it")),
+		html.Ul(
+			html.Li(
+				html.Strong(Text("Search engines.")),
+				Text(" They read documents. Reliably, and without a rendering budget."),
+			),
+			html.Li(
+				html.Strong(Text("Reader mode.")),
+				Text(" Which needs real article markup to find anything."),
+			),
+			html.Li(
+				html.Strong(Text("Translation.")),
+				Text(" Browser and extension translators walk the DOM of a document."),
+			),
+			html.Li(
+				html.Strong(Text("Print.")),
+				Text(
+					" Including a print stylesheet, which is a few lines of CSS on a real page.",
+				),
+			),
+			html.Li(
+				html.Strong(Text("View source.")),
+				Text(" The oldest debugging tool on the web, and still one of the best."),
+			),
+			html.Li(
+				html.Strong(Text("curl, wget and scripts.")),
+				Text(" Anything that can make a request can use your app."),
+			),
+			html.Li(
+				html.Strong(Text("Archives.")),
+				Text(" A page that a crawler can save is a page that outlives your hosting."),
+			),
+		),
+
+		html.H3(Text("Security defaults")),
+		html.Ul(
+			html.Li(
+				html.Strong(Text("Same-origin policy.")),
+				Text(" Enforced on a document you did not have to configure."),
+			),
+			html.Li(
+				html.Strong(Text("Content Security Policy.")),
+				Text(" A header, applied to the whole page."),
+			),
+			html.Li(
+				html.Strong(Text("Referrer policy.")),
+				Text(" Declared once, obeyed everywhere."),
+			),
+			html.Li(
+				html.Strong(Text("Mixed content blocking.")),
+				Text(" Automatic, and loud."),
+			),
+			html.Li(
+				html.Strong(Text("Subresource integrity.")),
+				Text(" An attribute, not a build step."),
+			),
+		),
+
+		html.P(Text("That is fifty-five, and I am certain I have missed some.")),
+
+		Pull(Text("None of these are impossible to rebuild. That is not the claim. The claim is that you now own all of them, forever, and you will get some of them wrong.")),
+
+		html.P(
+			Text(
+				"A good client-side framework will hand you a router that fixes the back button and a library that manages focus. What it cannot hand you is the other fifty — and the ones it misses fail quietly, in the hands of the user who needed them most: the one on a screen reader, the one pasting a link to a colleague, the one whose connection dropped halfway through.",
+			),
+		),
+
+		html.P(
+			Text(
+				"So the motivation behind fx is not nostalgia, and it is not minimalism for its own sake. It is that this list is enormous, the platform implements all of it already, and the price of keeping every item on it is to keep shipping documents at URLs. That is the whole bargain. fx exists so you can take the one thing a reload costs you — the flash — without paying for it with the list.",
+			),
+		),
+
+		Note("The one thing a swap does interrupt",
+			html.P(
+				Text(
+					"A fragment swap is not a navigation, so nothing announces it. A screen reader is told when a page loads and told nothing when an element is replaced. If a swap changes something a user needs to know about, say so — an ",
+				),
+				html.Code(Text("aria-live")),
+				Text(
+					" region on the fragment, or moving focus to it. It is the one item on the list fx hands back to you, and it is worth knowing that it is exactly one.",
+				),
+			),
+		),
+	)
 }
