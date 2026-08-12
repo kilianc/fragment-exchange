@@ -239,6 +239,43 @@ test('browser navigation restores fragments on popstate', async () => {
   assert(fetchResponses.length === 0, 'no fetch responses should be left', fetchResponses.length);
 });
 
+test('history state the app set survives an fx navigation', async () => {
+  let { fetchResponses } = mockFetch(10, [
+    '<div id="content">page a</div>',
+    '<div id="content">initial restored</div>',
+  ]);
+
+  setPageHTML(
+    '/initial',
+    `
+    <div id="content">
+      <a id="link-to-a" href="/page-a" fx-target="#content">initial</a>
+    </div>
+  `,
+  );
+
+  // The entry belongs to the page, not to fx. An app may have put its own state
+  // on it long before any fx navigation, and fx has to share rather than take.
+  history.replaceState({ appState: 'keep me' }, '');
+
+  document.getElementById('link-to-a').click();
+  await waitForText('page a', '#content');
+  assertPathname('/page-a');
+
+  // Getting the fragment back proves fx still stamped the entry on the way out,
+  // so this cannot be passed by simply leaving the entry alone.
+  history.back();
+  await waitForText('initial restored', '#content');
+  assertPathname('/initial');
+
+  assert(
+    history.state?.appState === 'keep me',
+    'fx overwrote the state the app put on the entry',
+    JSON.stringify(history.state),
+  );
+  assert(fetchResponses.length === 0, 'no fetch responses should be left', fetchResponses.length);
+});
+
 test('a navigation resets the scroll position and popstate restores it', async () => {
   let { fetchResponses } = mockFetch(10, [
     '<div id="content" style="height: 4000px"><a id="link-to-b" href="/page-b" fx-target="#content">page a</a></div>',

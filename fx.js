@@ -85,7 +85,14 @@ window.fx = (() => {
       // The entry we are leaving may have no state at all — a full page load
       // never sets any. Stamp it before pushing, so going back knows what to
       // swap instead of falling back to a reload, and where the page was.
-      history.replaceState({ targetSelectors, loadingSelectors, scrollY: window.scrollY }, '');
+      // The entry is the page's, not fx's: keep whatever the app put there.
+      history.replaceState(
+        { ...history.state, targetSelectors, loadingSelectors, scrollY: window.scrollY },
+        '',
+      );
+
+      // Not spread: this is a new entry, and the state above describes the one
+      // being left. Copying it forward would give the new page the old scrollY.
       history.pushState({ targetSelectors, loadingSelectors }, '', url);
     }
 
@@ -109,7 +116,7 @@ window.fx = (() => {
       setupMetaRefresh();
 
       if (redirectUrl) {
-        history.replaceState({ targetSelectors, loadingSelectors }, '', redirectUrl);
+        history.replaceState({ ...history.state, targetSelectors, loadingSelectors }, '', redirectUrl);
         fx.logDebug(`Navigation(${label}): redirected to`, redirectUrl);
       }
 
@@ -129,8 +136,11 @@ window.fx = (() => {
 
       // The URL was optimistically updated before the fetch. Put it back, so
       // the fallback starts from the address the user is actually looking at.
-      if (pushHistory) {
-        history.replaceState(null, '', originalUrl);
+      // Only the URL is wrong, so the state stays: clearing it would throw away
+      // the app's own state, and there is nothing to undo when the URL never
+      // moved — pushHistory alone is true for a navigation to the same URL.
+      if (isUrlChange) {
+        history.replaceState(history.state, '', originalUrl);
       }
 
       fallback?.(url, err);
@@ -441,7 +451,7 @@ window.fx = (() => {
   };
 
   let fx = {
-    version: '1.1.0',
+    version: '1.1.1',
     logInfo: noop,
     logDebug: noop,
     logWarn: noop,
