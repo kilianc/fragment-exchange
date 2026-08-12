@@ -315,6 +315,15 @@ FX-Target: #content, #primary-nav, #page-title
 `,
 			),
 			html.P(
+				Text("The header lists everything this navigation will swap: the link's "),
+				html.Code(Text("fx-target")),
+				Text(", plus every "),
+				html.Code(Text("fx-hungry")),
+				Text(
+					" element currently on the page. A hungry fragment your handler skipped would not be in the response, and would silently stop updating — so fx names them up front rather than letting you find out later.",
+				),
+			),
+			html.P(
 				Text(
 					"You may ignore it completely. Return the whole document and everything works — that is the default, and it is why an existing handler needs no changes at all.",
 				),

@@ -466,6 +466,61 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
 .k-chip  { fill: var(--accent); }
 .k-chipt { fill: var(--accent-fg); font: 600 12px var(--mono); }
 
+/* ---- pattern diagrams ----------------------------------------------- */
+
+.pattern { margin: 0; }
+
+.p-box   { fill: var(--bg-raised); stroke: var(--border-strong); stroke-width: 1; }
+.p-doc   { fill: var(--bg); stroke: var(--border); stroke-width: 1; }
+.p-cap   { fill: var(--fg-faint); font: 600 10px var(--mono); letter-spacing: 0.12em; }
+.p-doclabel { fill: var(--fg-faint); font: 13px var(--sans); }
+
+/* Hungry pieces sit outside the hole and get swapped anyway. */
+.p-hungry    { fill: var(--bg-raised); stroke: var(--border-strong); stroke-width: 1; stroke-dasharray: 5 4; }
+.p-hungrytag { fill: var(--accent); font: 600 10px var(--mono); letter-spacing: 0.1em; }
+
+/* The hole every link targets. */
+.p-hole  { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.3; }
+.p-ghost { fill: var(--bg-inset); }
+.p-gone  { fill: var(--bg-inset); stroke: var(--border); stroke-width: 1; stroke-dasharray: 4 4; }
+.p-gonet { fill: var(--fg-faint); font: 12px var(--sans); }
+
+.p-tag     { fill: var(--fg-muted); font: 12px var(--mono); }
+.p-tag-hot { fill: var(--accent); font-weight: 600; }
+.p-code     { fill: var(--fg-muted); font: 12.5px var(--mono); }
+.p-code-hot { fill: var(--accent); font-weight: 600; }
+.p-note    { fill: var(--fg-muted); font: 13px var(--sans); }
+.p-caption { fill: var(--fg-faint); font: 13.5px var(--sans); }
+
+.p-url      { fill: var(--bg-inset); }
+.p-url-hot  { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.2; }
+.p-urlt     { fill: var(--fg-muted); font: 12.5px var(--mono); }
+.p-urlt-hot { fill: var(--accent); font-weight: 600; }
+
+.p-field   { fill: var(--bg); stroke: var(--border-strong); stroke-width: 1; }
+.p-fieldt  { fill: var(--fg-muted); font: 12.5px var(--mono); }
+.p-submit  { fill: var(--accent); }
+.p-submitt { fill: var(--accent-fg); font: 600 12.5px var(--sans); }
+
+.p-pane  { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.3; }
+.p-panet { fill: var(--accent); font: 600 12px var(--mono); }
+
+.p-hint    { fill: var(--fg-faint); font: 11.5px var(--mono); }
+.p-hint-fx { fill: var(--accent); font-weight: 600; }
+
+.p-line    { stroke: var(--border-strong); stroke-width: 1.5; fill: none; }
+.p-line-fx { stroke: var(--accent); stroke-width: 1.8; }
+.p-head    { fill: var(--border-strong); }
+.p-head-fx { fill: var(--accent); }
+
+/* Rendered against skipped, in the selective-rendering diagram. */
+.p-run   { fill: var(--accent); opacity: 0.14; }
+.p-runt  { fill: var(--fg); font: 12px var(--mono); }
+.p-skip  { fill: var(--bg-inset); }
+.p-skipt { fill: var(--fg-faint); font: 12px var(--mono); }
+.p-state { font-size: 11.5px; }
+.p-total { fill: var(--fg); font: 700 15px var(--mono); }
+
 /* ---- lifecycle diagram --------------------------------------------- */
 
 .diagram {

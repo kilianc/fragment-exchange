@@ -32,7 +32,13 @@ test('a[fx-target] navigates and updates fragments', async () => {
   await waitForText('hungry-updated', '#hungry');
   assert(window._fxTestScript === 'ran', 'inline script not executed');
   assertClass('!fx-loading', '#loader');
-  assert(calls[0].options.headers['FX-Target'] === '#status', 'FX-Target header not sent', calls[0].options.headers['FX-Target']);
+  // The hungry element is part of this navigation, so the server has to be
+  // told about it — otherwise honouring the header silently breaks fx-hungry.
+  assert(
+    calls[0].options.headers['FX-Target'] === '#status, #hungry',
+    'FX-Target header must carry the hungry selectors too',
+    calls[0].options.headers['FX-Target'],
+  );
   assert(fetchResponses.length === 0, 'no fetch responses should be left', fetchResponses.length);
 });
 

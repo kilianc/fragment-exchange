@@ -40,6 +40,16 @@ func patternsBody(c *Ctx) Node {
 					"Start with a layout that renders a complete document, with a single element every navigation targets. Everything that changes per page goes inside it.",
 				),
 			),
+			html.Div(
+				html.Class("figure-wide"),
+				html.Div(html.Class("diagram-scroll"), LayoutDiagram()),
+				html.P(
+					html.Class("figure-caption"),
+					Text(
+						"One hole for every link to target, and the two pieces outside it that the server keeps up to date on its own.",
+					),
+				),
+			),
 			Snippet(
 				"html",
 				"layout",
@@ -88,6 +98,16 @@ func patternsBody(c *Ctx) Node {
 					"Filters, search text, sort, page number, which row is expanded, which dialog is open. Everything a person can see should be reconstructible from the address bar.",
 				),
 			),
+			html.Div(
+				html.Class("figure-wide"),
+				html.Div(html.Class("diagram-scroll"), URLStateDiagram()),
+				html.P(
+					html.Class("figure-caption"),
+					Text(
+						"A form makes a URL, and the URL makes the page. Nothing is stored in between.",
+					),
+				),
+			),
 			Snippet(
 				"html",
 				"a filter form is just a form",
@@ -128,6 +148,16 @@ func patternsBody(c *Ctx) Node {
 				),
 			),
 			html.P(Text("Make it a query parameter and all three problems disappear.")),
+			html.Div(
+				html.Class("figure-wide"),
+				html.Div(html.Class("diagram-scroll"), DetailPaneDiagram()),
+				html.P(
+					html.Class("figure-caption"),
+					Text(
+						"Open and closed are two different URLs, which is what makes the back button close the pane.",
+					),
+				),
+			),
 			Snippet(
 				"html",
 				"opening a detail pane",
@@ -169,6 +199,16 @@ if id := r.URL.Query().Get("open"); id != "" {
 					"When something on the page changes on its own — a job running, a queue draining — poll the page you are already on and swap only the part that moves.",
 				),
 			),
+			html.Div(
+				html.Class("figure-wide"),
+				html.Div(html.Class("diagram-scroll"), PollingDiagram()),
+				html.P(
+					html.Class("figure-caption"),
+					Text(
+						"The timer is a tag inside the fragment it refreshes, so it cannot outlive the page that wanted it.",
+					),
+				),
+			),
 			Snippet(
 				"html",
 				"inside #content, not in the head",
@@ -199,6 +239,16 @@ if id := r.URL.Query().Get("open"); id != "" {
 			html.P(
 				Text(
 					"Write actions are forms that POST and answer with a redirect. This is the oldest pattern on the web and it is still the right one.",
+				),
+			),
+			html.Div(
+				html.Class("figure-wide"),
+				html.Div(html.Class("diagram-scroll"), MutationDiagram()),
+				html.P(
+					html.Class("figure-caption"),
+					Text(
+						"Post, redirect, get — the oldest pattern on the web, with fx following the redirect for you.",
+					),
 				),
 			),
 			Snippet(
@@ -246,6 +296,16 @@ func requeue(w http.ResponseWriter, r *http.Request) {
 				Text(" "),
 				html.Code(Text("FX-Target")),
 				Text(" header tells you exactly what you are allowed to skip."),
+			),
+			html.Div(
+				html.Class("figure-wide"),
+				html.Div(html.Class("diagram-scroll"), CheapDiagram()),
+				html.P(
+					html.Class("figure-caption"),
+					Text(
+						"The same handler, asked two different ways. The poll never pays for the roll-up.",
+					),
+				),
 			),
 			Snippet(
 				"go",

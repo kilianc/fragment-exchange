@@ -45,9 +45,12 @@ func LifecycleDiagram() g.Node {
 		return out
 	}
 
+	// A hungry element is part of every navigation, so it is in the header and
+	// the handler has to render it. Only the fragments nobody asked for are
+	// skipped.
 	onlyDetail := all("#detail")
 	for i := range onlyDetail {
-		onlyDetail[i].Computed = onlyDetail[i].Name == "#detail"
+		onlyDetail[i].Computed = onlyDetail[i].Name == "#detail" || onlyDetail[i].Name == "#primary-nav"
 	}
 
 	var b strings.Builder
@@ -76,7 +79,7 @@ func LifecycleDiagram() g.Node {
 		Index:    "1",
 		Title:    "Add one attribute",
 		Subtitle: `The link gains fx-target="#detail". Nothing on the server changes.`,
-		Request:  []string{"GET /reports?status=open&amp;open=1421", "FX-Target: #detail"},
+		Request:  []string{"GET /reports?status=open&amp;open=1421", "FX-Target: #detail, #primary-nav"},
 		Response: "200 · a complete HTML document",
 		Frags:    all("#detail"),
 		Outcome:  "Zero backend cost.",
@@ -88,10 +91,10 @@ func LifecycleDiagram() g.Node {
 		Index:    "2",
 		Title:    "Answer the header",
 		Subtitle: "The handler reads FX-Target and skips what nobody asked for.",
-		Request:  []string{"GET /reports?status=open&amp;open=1421", "FX-Target: #detail"},
+		Request:  []string{"GET /reports?status=open&amp;open=1421", "FX-Target: #detail, #primary-nav"},
 		Response: "200 · only what was asked for",
 		Frags:    onlyDetail,
-		Outcome:  "1,022ms → 8ms",
+		Outcome:  "1,030ms → 10ms",
 		Detail:   "Worth doing once a fragment is expensive enough to be a component of its own — a modal, a widget, a roll-up.",
 		Fast:     true,
 	}))
@@ -389,9 +392,15 @@ func hookBrowser() string {
 func arrow(x1, y1, x2, y2 float64, cls string) string {
 	angle := math.Atan2(y2-y1, x2-x1) * 180 / math.Pi
 
-	head := "k-head"
-	if strings.Contains(cls, "k-line-fx") {
-		head = "k-head k-head-fx"
+	// The k- and p- families draw the same shapes in different diagrams.
+	family := "k"
+	if strings.Contains(cls, "p-line") {
+		family = "p"
+	}
+
+	head := family + "-head"
+	if strings.Contains(cls, "-line-fx") {
+		head += " " + family + "-head-fx"
 	}
 
 	return fmt.Sprintf(

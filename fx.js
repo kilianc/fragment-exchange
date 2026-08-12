@@ -87,15 +87,21 @@ window.fx = (() => {
     }
 
     try {
+      // The hungry elements have to be worked out before the request, not
+      // after it. They are part of what this navigation is going to swap, so
+      // they belong in the header — otherwise a server that honours FX-Target
+      // skips them, the response does not contain them, and they silently stop
+      // updating.
+      let targets = getTargets(targetSelectors);
+
       let { htmlText, redirectUrl } = await fetchWithAbort({
         url,
         method,
         body,
-        targetSelectors,
+        targetSelectors: targets.join(', '),
         abortController,
       });
 
-      let targets = getTargets(targetSelectors);
       updateFragments(targets, htmlText);
       setupMetaRefresh();
 

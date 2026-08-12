@@ -32,6 +32,13 @@ func patternsBody(c *Ctx) Node {
 					navigation targets. Everything that changes per page goes inside it.
 				</p>,
 
+				<div class="figure-wide">
+					<div class="diagram-scroll">
+						{LayoutDiagram()}
+					</div>
+					<p class="figure-caption">One hole for every link to target, and the two pieces outside it that the server keeps up to date on its own.</p>
+				</div>,
+
 				Snippet("html", "layout", `
 <html>
   <head>
@@ -75,6 +82,13 @@ func patternsBody(c *Ctx) Node {
 					Everything a person can see should be reconstructible from the address bar.
 				</p>,
 
+				<div class="figure-wide">
+					<div class="diagram-scroll">
+						{URLStateDiagram()}
+					</div>
+					<p class="figure-caption">A form makes a URL, and the URL makes the page. Nothing is stored in between.</p>
+				</div>,
+
 				Snippet("html", "a filter form is just a form", `
 <form action="/reports" method="GET"
       fx-target="#results"
@@ -109,6 +123,13 @@ func patternsBody(c *Ctx) Node {
 
 				<p>Make it a query parameter and all three problems disappear.</p>,
 
+				<div class="figure-wide">
+					<div class="diagram-scroll">
+						{DetailPaneDiagram()}
+					</div>
+					<p class="figure-caption">Open and closed are two different URLs, which is what makes the back button close the pane.</p>
+				</div>,
+
 				Snippet("html", "opening a detail pane", `
 <a href="/reports?q=timeout&open=1421"
    fx-target="#detail"
@@ -140,6 +161,13 @@ if id := r.URL.Query().Get("open"); id != "" {
 					the page you are already on and swap only the part that moves.
 				</p>,
 
+				<div class="figure-wide">
+					<div class="diagram-scroll">
+						{PollingDiagram()}
+					</div>
+					<p class="figure-caption">The timer is a tag inside the fragment it refreshes, so it cannot outlive the page that wanted it.</p>
+				</div>,
+
 				Snippet("html", "inside #content, not in the head", `
 <meta name="fx-refresh" id="jobs-poll" fx-interval="5000" fx-target="#jobs">
 
@@ -167,6 +195,13 @@ if id := r.URL.Query().Get("open"); id != "" {
 					Write actions are forms that POST and answer with a redirect. This is the oldest pattern
 					on the web and it is still the right one.
 				</p>,
+
+				<div class="figure-wide">
+					<div class="diagram-scroll">
+						{MutationDiagram()}
+					</div>
+					<p class="figure-caption">Post, redirect, get — the oldest pattern on the web, with fx following the redirect for you.</p>
+				</div>,
 
 				Snippet("html", "a form, doing what forms do", `
 <form action="/jobs/1421/requeue" method="POST"
@@ -205,6 +240,13 @@ func requeue(w http.ResponseWriter, r *http.Request) {
 					templates are fast and the expensive part is the database. When it does matter, the{" "}
 					<code>FX-Target</code> header tells you exactly what you are allowed to skip.
 				</p>,
+
+				<div class="figure-wide">
+					<div class="diagram-scroll">
+						{CheapDiagram()}
+					</div>
+					<p class="figure-caption">The same handler, asked two different ways. The poll never pays for the roll-up.</p>
+				</div>,
 
 				Snippet("go", "the same handler, now selective", `
 func jobs(w http.ResponseWriter, r *http.Request) {
