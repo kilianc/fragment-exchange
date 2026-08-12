@@ -7,6 +7,20 @@ fx follows semver over three surfaces: the attributes, the `fx` object, and the
 `FX-Target` header. See the versioning notes in the README for why the header
 counts.
 
+## 1.1.0
+
+### The library
+
+- `fx-scroll` on a link, a form or a submitter: `top`, `preserve`, or a selector
+  to bring into view.
+- Where a navigation lands is now decided by the URL. A path change still starts
+  at the top and a `#hash` still goes to that element, but a query string change
+  keeps the scroll position instead of resetting it: sorting, filtering and
+  paging refine the page you are already reading rather than replacing it.
+
+  Behaviour change for anyone on 1.0.0 whose query string navigations relied on
+  the reset. `fx-scroll="top"` restores it for the links that want it.
+
 ## 1.0.0
 
 First tagged release. The library, the Go package and the site as they stand.

@@ -59,6 +59,7 @@ window.fx = (() => {
     body,
     targetSelectors = '',
     loadingSelectors = '',
+    scrollBehavior = '',
     pushHistory = true,
     label = 'nav',
     abortController,
@@ -113,9 +114,7 @@ window.fx = (() => {
       }
 
       if (isUrlChange) {
-        let hash = new URL(redirectUrl || url, originalUrl).hash;
-        let anchor = hash && document.getElementById(decodeURIComponent(hash.slice(1)));
-        anchor ? anchor.scrollIntoView() : window.scrollTo(0, 0);
+        applyScroll(scrollBehavior, redirectUrl || url, originalUrl);
       }
 
       let duration = Math.round(performance.now() - startTime);
@@ -137,6 +136,32 @@ window.fx = (() => {
       fallback?.(url, err);
     } finally {
       loadingElements.forEach((el) => el.classList.remove('fx-loading'));
+    }
+  }
+
+  // A path change is a new page, and a new page starts at the top. A query
+  // string change is the same page refined — sorted, filtered, paged — where
+  // the reading position still means something, so it stays. fx-scroll settles
+  // the cases the URL cannot: "top", "preserve", or a selector to scroll to.
+  function applyScroll(scrollBehavior, url, previousUrl) {
+    if (scrollBehavior === 'preserve') return;
+
+    if (scrollBehavior && scrollBehavior !== 'top') {
+      let element = document.querySelector(scrollBehavior);
+      element
+        ? element.scrollIntoView()
+        : fx.logWarn('Nothing matches fx-scroll, staying put:', scrollBehavior);
+      return;
+    }
+
+    let next = new URL(url, previousUrl);
+    let previous = new URL(previousUrl);
+    let anchor = next.hash && document.getElementById(decodeURIComponent(next.hash.slice(1)));
+
+    if (anchor) {
+      anchor.scrollIntoView();
+    } else if (scrollBehavior === 'top' || next.origin !== previous.origin || next.pathname !== previous.pathname) {
+      window.scrollTo(0, 0);
     }
   }
 
@@ -325,12 +350,14 @@ window.fx = (() => {
 
     let targetSelectors = link.getAttribute('fx-target');
     let loadingSelectors = link.getAttribute('fx-loading-target');
+    let scrollBehavior = link.getAttribute('fx-scroll');
 
     await runFxNavigation({
       url: link.href,
       method: 'GET',
       targetSelectors,
       loadingSelectors,
+      scrollBehavior,
       pushHistory: true,
       label: 'click',
       fallback: fx.clickFallback,
@@ -348,6 +375,7 @@ window.fx = (() => {
     let url = submitter?.getAttribute('formaction') || form.action || window.location.href;
     let targetSelectors = form.getAttribute('fx-target');
     let loadingSelectors = form.getAttribute('fx-loading-target');
+    let scrollBehavior = submitter?.getAttribute('fx-scroll') || form.getAttribute('fx-scroll');
     let method = (submitter?.getAttribute('formmethod') || form.method || 'GET').toUpperCase();
     let body = new FormData(form);
 
@@ -379,6 +407,7 @@ window.fx = (() => {
       body,
       targetSelectors,
       loadingSelectors,
+      scrollBehavior,
       pushHistory: true,
       label: 'submit',
       fallback: (failedUrl, err) => fx.submitFallback(form, failedUrl, err),
@@ -412,7 +441,7 @@ window.fx = (() => {
   };
 
   let fx = {
-    version: '1.0.0',
+    version: '1.1.0',
     logInfo: noop,
     logDebug: noop,
     logWarn: noop,

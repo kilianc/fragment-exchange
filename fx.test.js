@@ -276,6 +276,104 @@ test('a navigation resets the scroll position and popstate restores it', async (
   assert(fetchResponses.length === 0, 'no fetch responses should be left', fetchResponses.length);
 });
 
+test('a query string change keeps the scroll position', async () => {
+  let { fetchResponses } = mockFetch(10, [
+    '<div id="content" style="height: 4000px">sorted by name</div>',
+  ]);
+
+  setPageHTML(
+    '/reports',
+    `
+    <div id="content" style="height: 4000px">
+      <a id="sort" href="/reports?sort=name" fx-target="#content">sort</a>
+    </div>
+  `,
+  );
+
+  window.scrollTo(0, 500);
+  await waitUntil(() => Math.round(window.scrollY) === 500, 'the page never scrolled');
+
+  document.getElementById('sort').click();
+  await waitForText('sorted by name', '#content');
+  await waitUntil(() => Math.round(window.scrollY) === 500, 'a refined view should stay where it was');
+  assert(fetchResponses.length === 0, 'no fetch responses should be left', fetchResponses.length);
+});
+
+test('fx-scroll="top" resets a query string change', async () => {
+  let { fetchResponses } = mockFetch(10, [
+    '<div id="content" style="height: 4000px">page 2</div>',
+  ]);
+
+  setPageHTML(
+    '/reports',
+    `
+    <div id="content" style="height: 4000px">
+      <a id="pager" href="/reports?page=2" fx-target="#content" fx-scroll="top">next</a>
+    </div>
+  `,
+  );
+
+  window.scrollTo(0, 500);
+  await waitUntil(() => Math.round(window.scrollY) === 500, 'the page never scrolled');
+
+  document.getElementById('pager').click();
+  await waitForText('page 2', '#content');
+  await waitUntil(() => Math.round(window.scrollY) === 0, 'fx-scroll="top" should override the default');
+  assert(fetchResponses.length === 0, 'no fetch responses should be left', fetchResponses.length);
+});
+
+test('fx-scroll="preserve" keeps the position across a path change', async () => {
+  let { fetchResponses } = mockFetch(10, [
+    '<div id="content" style="height: 4000px">page b</div>',
+  ]);
+
+  setPageHTML(
+    '/page-a',
+    `
+    <div id="content" style="height: 4000px">
+      <a id="link" href="/page-b" fx-target="#content" fx-scroll="preserve">to b</a>
+    </div>
+  `,
+  );
+
+  window.scrollTo(0, 500);
+  await waitUntil(() => Math.round(window.scrollY) === 500, 'the page never scrolled');
+
+  document.getElementById('link').click();
+  await waitForText('page b', '#content');
+  await waitUntil(() => Math.round(window.scrollY) === 500, 'fx-scroll="preserve" should override the default');
+  assert(fetchResponses.length === 0, 'no fetch responses should be left', fetchResponses.length);
+});
+
+test('fx-scroll takes a selector and brings that element into view', async () => {
+  let { fetchResponses } = mockFetch(10, [
+    `
+      <div id="content">
+        <div style="height: 2000px">filters</div>
+        <div id="results" style="height: 2000px">page 2</div>
+      </div>
+    `,
+  ]);
+
+  setPageHTML(
+    '/reports',
+    `
+    <div id="content" style="height: 4000px">
+      <a id="pager" href="/reports?page=2" fx-target="#content" fx-scroll="#results">next</a>
+    </div>
+  `,
+  );
+
+  document.getElementById('pager').click();
+  await waitForText('page 2', '#results');
+  await waitUntil(
+    () => Math.round(document.getElementById('results').getBoundingClientRect().top) === 0,
+    'fx-scroll should bring #results to the top of the viewport',
+  );
+  assert(window.scrollY > 0, 'the page should have scrolled down to it', window.scrollY);
+  assert(fetchResponses.length === 0, 'no fetch responses should be left', fetchResponses.length);
+});
+
 test('meta[name="fx-refresh"][fx-interval] should poll and self-replace', async () => {
   let { fetchResponses } = mockFetch(100, [
     `

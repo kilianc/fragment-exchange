@@ -60,7 +60,14 @@ borrows from Unpoly and what this approach costs you, is the paper at
 | `fx-target` | On a link or form: fetch the destination, swap these selectors |
 | `fx-loading-target` | Add the `fx-loading` class to these while the request is in flight |
 | `fx-hungry` | On any element with an `id`: swap me on every navigation |
+| `fx-scroll` | Override where the page lands: `top`, `preserve`, or a selector |
 | `<meta name="fx-refresh" fx-interval>` | Re-fetch this page on an interval, swap a fragment |
+
+Where the page lands is decided by the URL, and usually you never touch it. A path change is
+a new page, so it starts at the top; a `#hash` goes to that element. A query string change is
+the same page refined — sorted, filtered, paged — so it stays where it was. `fx-scroll` is
+for the case the URL cannot tell apart: pager links whose results should start at the top,
+`fx-scroll="#results"`.
 
 Plus one thing on your side: every request carries an `FX-Target` header naming the
 fragments the browser is about to use, so a handler can skip work nobody asked for. It is
@@ -81,7 +88,7 @@ what you get today is what you keep — the file is yours once you have it.
 If you would rather not vendor it, tagged releases are on jsDelivr:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/kilianc/fragment-exchange@v1.0.0/fx.js" integrity="sha384-RTr3W+5w6KYGgiH4UREXExO1cFu9JHkLYI6PUYXbz2BZoCHDCC1+y/Kyh18nd1bL" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/gh/kilianc/fragment-exchange@v1.1.0/fx.js" integrity="sha384-1WnJ9IdO1PC9rADdsAkupMYtmEpPOIJ2A7aTdkjXg1ji07SnWwrz+PJdJskIbOAc" crossorigin="anonymous"></script>
 ```
 
 Pin the tag and keep the hash. An unpinned URL hands someone else the right to change the
@@ -100,7 +107,7 @@ Semver, and the version covers three things:
 
 | | |
 |---|---|
-| The attributes | `fx-target`, `fx-loading-target`, `fx-hungry`, `fx-interval` |
+| The attributes | `fx-target`, `fx-loading-target`, `fx-hungry`, `fx-scroll`, `fx-interval` |
 | The `fx` object | `fx.timeout`, `fx.clickFallback`, `fx.version` |
 | The `FX-Target` header | What the browser sends, and what a handler may assume |
 
@@ -109,8 +116,9 @@ That third one is easy to forget and the most expensive to get wrong. A server r
 browser cache, so changing what that header means is a breaking change even when the
 markup and the runtime object are untouched.
 
-Being at `1.0.0` is the promise that follows from that: none of the three changes without a
-`2.0.0`.
+Being in `1.x` is the promise that follows from that: none of the three breaks without a
+`2.0.0`. Attributes may be added — `fx-scroll` arrived in `1.1.0` — but markup written
+against an earlier `1.x` keeps working.
 
 ## Go
 
