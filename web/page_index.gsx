@@ -12,18 +12,52 @@ func IndexPage() Page {
 }
 
 func indexBody(c *Ctx) Node {
+	// The figure has two states and they are two URLs, because a picture whose
+	// state you cannot link to would be an odd thing to open this page with.
+	fxOn := c.R.URL.Query().Get("fx") == "on"
+
 	return (
 		<>
-			<div class="figure-wide hero-figure">
-				<div class="diagram-scroll">
-					{HookDiagram()}
+			<div class="figure-wide hero-figure" id="hook-figure">
+				<div class="figure-controls">
+					{If(!fxOn,
+						<a class="fx-enable" href="/?fx=on" fx-target="#hook-figure" fx-loading-target="#progress-bar">
+							{Bolt()}
+							Enable fx
+						</a>,
+					)}
+					{If(fxOn,
+						<span class="fx-on">
+							{Bolt()}
+							fx is on
+						</span>,
+					)}
+					{If(fxOn,
+						<a class="fx-off" href="/" fx-target="#hook-figure" fx-loading-target="#progress-bar">
+							turn it off
+						</a>,
+					)}
+					<span class="figure-hint">
+						{If(!fxOn, Text("Go on. Nothing on the server changes."))}
+						{If(fxOn, Text("That is the entire difference."))}
+					</span>
 				</div>
-				<p class="figure-caption">
-					A page is a render function, and the URL is its only argument — which is precisely why
-					everything a person can see has to live in there. fx does not change that function. It
-					adds one header to the call, so the function can skip the parts of its own answer that
-					nobody is going to look at.
-				</p>
+
+				<div class="diagram-scroll">
+					{HookDiagram(fxOn)}
+				</div>
+
+				{If(!fxOn,
+					<p class="figure-caption">
+						And it is fine. It has always been fine. The only thing wrong with it is the flash.
+					</p>,
+				)}
+				{If(fxOn,
+					<p class="figure-caption">
+						One attribute on the link. Nothing else about your site changes — not the URL, not the
+						handler, not the page it sends back.
+					</p>,
+				)}
 			</div>
 
 			<div class="hero-cta">

@@ -414,57 +414,92 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
 
 /* ---- hook diagram --------------------------------------------------- */
 
+/* The opening picture. Both of its states use these; the only rule that
+   changes between them is which rectangle gets .k-swap. */
+
 .hook { margin: 0 0 6px; }
 
-/* The sheet the base scene sits on, and the boxes on it. The boxes are white
-   so they read as objects; the sheet is the page colour so it reads as ground. */
 .k-sheet      { fill: var(--bg); stroke: var(--border); stroke-width: 1; }
 .k-sheetlabel { fill: var(--fg-faint); font: 600 11px var(--mono); letter-spacing: 0.11em; }
-.k-sheetsub   { fill: var(--fg-faint); font: 13px var(--sans); }
-/* The whole idea in one line, so the picture has a spine to hang on. */
-.k-equation   { fill: var(--fg); font: 700 17px var(--mono); letter-spacing: -0.01em; }
+.k-headline   { fill: var(--fg); font: 640 19px var(--sans); letter-spacing: -0.01em; }
 
 .k-box    { fill: var(--bg-raised); stroke: var(--border-strong); stroke-width: 1; }
 .k-chrome { fill: var(--bg-inset); }
 .k-dot    { fill: var(--border-strong); }
 .k-cap    { fill: var(--fg-faint); font: 600 10px var(--mono); letter-spacing: 0.12em; }
+.k-note   { fill: var(--fg); font: 13.5px var(--sans); }
 
-/* The address bar is the only thing in the base drawing that gets the accent,
-   because it is the thing the base drawing is about. */
+/* The address bar is the only mono in the picture, because it is the only
+   thing in it you would type. */
 .k-url  { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.2; }
 .k-urlt { fill: var(--accent); font: 600 12.5px var(--mono); }
 
-.k-page    { fill: var(--bg); stroke: var(--border); stroke-width: 1; }
-.k-bar     { fill: var(--bg-inset); }
-.k-frag    { fill: none; stroke: var(--accent); stroke-width: 1.4; stroke-dasharray: 4 3; }
-.k-fragt   { fill: var(--accent); font: 600 11px var(--mono); }
-.k-fragbar { fill: var(--accent); opacity: 0.28; }
+.k-page     { fill: var(--bg); stroke: var(--border); stroke-width: 1; }
+/* Dark enough to still read as content under the blue area, since in the off
+   state that area covers every one of them. */
+.k-bar      { fill: color-mix(in srgb, var(--fg-faint) 34%, transparent); }
+.k-bar-list { fill: color-mix(in srgb, var(--fg-faint) 54%, transparent); }
 
-.k-code     { fill: var(--fg-muted); font: 12px var(--mono); }
-.k-code-hot { fill: var(--accent); font-weight: 600; }
-.k-rule     { stroke: var(--border); stroke-width: 1; }
-.k-note     { fill: var(--fg); font: 13px var(--sans); }
+/* Blue is one idea and one idea only: this is what the browser replaces. The
+   area is all that differs between the two states, so it has to mean the same
+   thing in both. */
+.k-swap  { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; }
+.k-swapt { fill: var(--accent); font: 600 13px var(--sans); }
 
-.k-wire     { fill: var(--fg-muted); font: 12.5px var(--mono); }
-.k-wire-fx  { fill: var(--accent); font-weight: 600; }
-.k-say      { fill: var(--fg-faint); font: 13px var(--sans); }
+.k-wire { fill: var(--fg-muted); font: 13.5px var(--sans); }
+.k-say  { fill: var(--fg-faint); font: 13px var(--sans); }
 
 .k-line      { stroke: var(--border-strong); stroke-width: 1.5; fill: none; }
 .k-line-dash { stroke-dasharray: 5 4; }
-.k-line-fx   { stroke: var(--accent); stroke-width: 1.8; }
 .k-head      { fill: var(--border-strong); }
-.k-head-fx   { fill: var(--accent); }
 
-/* The layer. Lifted with a shadow, breaking the top edge of the sheet below
-   it, so it reads as sitting on top rather than sitting beside. */
-.k-layer      { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.4; }
-.k-layerlabel { fill: var(--accent); font: 700 11.5px var(--mono); letter-spacing: 0.11em; }
-.k-layertext  { fill: var(--fg); font: 13.5px var(--sans); }
-.k-header     { fill: var(--accent); font: 700 12.5px var(--mono); }
-.k-leader     { stroke: var(--accent); stroke-width: 1.4; stroke-dasharray: 4 4; fill: none; opacity: 0.7; }
+/* A quiet stamp, deliberately not blue: blue means "replaced" in this
+   picture, and the whole point of the server half is that nothing was. */
+.k-chip  { fill: var(--bg-inset); stroke: var(--border-strong); stroke-width: 1; }
+.k-chipt { fill: var(--fg-muted); font: 600 12px var(--sans); }
 
-.k-chip  { fill: var(--accent); }
-.k-chipt { fill: var(--accent-fg); font: 600 12px var(--mono); }
+/* The sentence to leave with. */
+.k-punch    { fill: var(--fg); font: 640 17px var(--sans); letter-spacing: -0.01em; }
+.k-punch-fx { fill: var(--accent); }
+.k-punchsub { fill: var(--fg-muted); font: 13.5px var(--sans); }
+
+/* The control that turns it on. Not a switch: a button worth pressing, which
+   becomes a badge once it has been. */
+.figure-controls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin: 0 0 14px;
+}
+
+.fx-enable, .fx-on {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  border-radius: 999px;
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 600;
+}
+.fx-enable {
+  background: var(--accent);
+  color: var(--accent-fg);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+.fx-enable:hover { text-decoration: none; filter: brightness(1.08); }
+.fx-on {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+}
+.fx-off { font-family: var(--sans); font-size: 14px; color: var(--fg-faint); }
+.fx-off:hover { color: var(--fg-muted); }
+
+.bolt { display: block; }
+
+.figure-hint { font-family: var(--sans); font-size: 13.5px; color: var(--fg-faint); }
 
 /* ---- pattern diagrams ----------------------------------------------- */
 

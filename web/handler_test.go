@@ -93,6 +93,46 @@ func TestHungryElements(t *testing.T) {
 	}
 }
 
+// The figure the home page opens with is a two-state drawing, and the state is
+// a query string like any other. It is the smallest possible example of the
+// thing the page is arguing for, so it has to hold to the same rules: reachable
+// by URL, rendered by the server, swapped by fx.
+func TestTheOpeningFigureIsAURL(t *testing.T) {
+	_, plain := get(t, "/", "")
+	_, enabled := get(t, "/?fx=on", "")
+
+	// The picture makes its point by changing one thing: how much of the page
+	// the browser replaces.
+	if !strings.Contains(plain, "all of it — replaced") {
+		t.Error("/ does not say the whole page is replaced")
+	}
+	if !strings.Contains(enabled, "just this — replaced") {
+		t.Error("/?fx=on does not say only one part is replaced")
+	}
+
+	// And by changing nothing else. If the scene is not word for word the same
+	// on both sides, the drawing is arguing against the page it opens.
+	for _, want := range []string{
+		"Every website you have ever used works like this.",
+		"YOUR SERVER",
+		"a whole page comes back",
+		"every time — with fx or without it",
+	} {
+		if !strings.Contains(plain, want) || !strings.Contains(enabled, want) {
+			t.Errorf("%q is not in both states of the figure", want)
+		}
+	}
+
+	// And the element the toggle asks for has to come back in both states, or
+	// fx has nothing to swap and falls back to a reload.
+	for _, path := range []string{"/", "/?fx=on"} {
+		_, body := get(t, path, "#hook-figure")
+		if !strings.Contains(body, `id="hook-figure"`) {
+			t.Errorf("%s: the fragment the toggle targets is not in the response", path)
+		}
+	}
+}
+
 // The claim the demo makes in its own log: a request that does not name the
 // expensive fragment does not pay for it.
 func TestFxTargetSkipsUnrequestedWork(t *testing.T) {
