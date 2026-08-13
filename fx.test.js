@@ -444,6 +444,34 @@ test('meta[name="fx-refresh"][fx-interval] should poll and self-replace', async 
   assert(fetchResponses.length === 0, 'no fetch responses should be left', fetchResponses.length);
 });
 
+test('a poll that times out tries again', async () => {
+  let { fetchResponses } = mockFetch(80, [
+    `
+      <!-- disable the timer -->
+      <meta id="poller" fx-hungry>
+      <div id="poll">polled</div>
+    `,
+  ]);
+
+  setPageHTML(
+    '/initial',
+    `
+    <meta id="poller" name="fx-refresh" fx-interval="30" fx-target="#poll" fx-hungry>
+    <div id="poll">initial</div>
+  `,
+  );
+
+  // Too short for the first poll to finish. A timeout aborts the request, and
+  // aborting used to stop the poller with it — one slow response and the
+  // fragment stayed frozen for the life of the page, saying nothing.
+  fx.timeout = '40';
+  await wait(90);
+  fx.timeout = '500';
+
+  await waitForText('polled', '#poll');
+  assert(fetchResponses.length === 0, 'no fetch responses should be left', fetchResponses.length);
+});
+
 test('meta[name="fx-refresh"][fx-interval] polling timers are cleared on url change', async () => {
   let { calls, fetchResponses } = mockFetch(10, [
     '<a id="nav" href="/page-a" fx-target="#noop" fx-hungry>to-page-b</a>',
