@@ -529,7 +529,7 @@ func reports(w http.ResponseWriter, r *http.Request) {
 				"html",
 				"index.html",
 				`
-<script src="https://cdn.jsdelivr.net/gh/kilianc/fragment-exchange@v1.1.2/fx.js" integrity="sha384-UKo0cZFhvupnNrmWsWWZxubIzeDqGmKNU5bnGr/BbA7hfD3QAR2X7fnEN5XO2Fz4" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/gh/kilianc/fragment-exchange@v1.1.2/fx.js" integrity="sha384-Qev8c/CPWtpM1Y1N+t1ngj8hDkirWbMrl4IQHv6hJ0OZ7SnEDTRleAjA7dYwDvol" crossorigin="anonymous"></script>
 `,
 			),
 			html.P(
