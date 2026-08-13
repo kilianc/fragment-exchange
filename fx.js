@@ -227,17 +227,19 @@ window.fx = (() => {
       let targetSelectors = el.getAttribute('fx-target');
       if (!targetSelectors) continue;
       let loadingSelectors = el.getAttribute('fx-loading-target');
-      let abortController = new AbortController();
 
       fx.logDebug(`Polling[${el.id}]: added timer for ${interval}ms for ${targetSelectors}`);
 
-      // the guard against stale timer updates is in 3 parts:
-      // 1. [optional] if aborted during the timer's wait period, cancel the timer
-      // 2. [mandatory] after we update the fragments, abort all timers for elements that are no longer in the DOM
-      // 3. [mandatory] at the end of the refresh function, if aborted, exit early and don't add a new timer
+      // The entry in the map is the poller. Its presence is what says the
+      // poller is still wanted, and every tick gets a fresh controller for its
+      // own request — an abort has to be able to cancel a request in flight
+      // without being the thing that stops the polling.
+      let entry = { timer: null, abortController: new AbortController() };
 
       let refresh = async () => {
         fx.logDebug(`Polling[${el.id}]: running ${interval}ms for ${targetSelectors}`);
+
+        entry.abortController = new AbortController();
 
         await runFxNavigation({
           url,
@@ -245,17 +247,19 @@ window.fx = (() => {
           loadingSelectors,
           pushHistory: false,
           label: `fx-refresh[${el.id}]`,
-          abortController,
+          abortController: entry.abortController,
         });
 
-        if (!abortController.signal.aborted) {
-          let timer = setTimeout(refresh, interval);
-          REFRESH_TIMERS_MAP.set(el, { timer, abortController });
-        }
+        // Anything that stops a poller takes its entry out of the map, so this
+        // covers all of them: a url change cancelling every timer, and the
+        // sweep above dropping an element the last swap removed.
+        if (REFRESH_TIMERS_MAP.get(el) !== entry) return;
+
+        entry.timer = setTimeout(refresh, interval);
       };
 
-      let timer = setTimeout(refresh, interval);
-      REFRESH_TIMERS_MAP.set(el, { timer, abortController });
+      entry.timer = setTimeout(refresh, interval);
+      REFRESH_TIMERS_MAP.set(el, entry);
     }
   }
 

@@ -20,6 +20,10 @@ counts.
   a field named `action` or `method` replaced the form's own — and a button
   named `submit`, which is ordinary markup, shadowed `form.submit()` and made
   the fallback throw, losing the submission it existed to rescue.
+- A poll that times out tries again. `fx-refresh` shared one `AbortController`
+  across every tick, and a signal cannot be un-aborted, so the timeout meant to
+  cancel one slow request stopped the polling with it — permanently, and without
+  saying anything. Each request now carries its own.
 
 ## 1.1.1
 
