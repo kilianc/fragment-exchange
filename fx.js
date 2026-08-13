@@ -80,10 +80,21 @@ window.fx = (() => {
     let originalUrl = window.location.href;
     let isUrlChange = pushHistory && url !== originalUrl;
 
+    // Only a GET can claim its url before the answer arrives, because only a
+    // GET is what going back to that url would repeat. The address a form posts
+    // to is not somewhere to come back to: a browser sent there again replays
+    // nothing and asks for nothing, restoring what it kept, and fx keeps
+    // nothing. An entry it could only restore with a GET the server never
+    // agreed to answer is worse than no entry, so a non-GET waits to see
+    // whether the server names a url of its own.
+    let claimsUrl = isUrlChange && method === 'GET';
+
     if (isUrlChange) {
       cancelAllTimers();
       cancelAllFetches();
+    }
 
+    if (claimsUrl) {
       // The entry we are leaving may have no state at all — a full page load
       // never sets any. Stamp it before pushing, so going back knows what to
       // swap instead of falling back to a reload, and where the page was.
@@ -131,8 +142,15 @@ window.fx = (() => {
 
       updateFragments(targets, newDocument);
 
-      if (redirectUrl) {
+      if (redirectUrl && claimsUrl) {
         history.replaceState({ ...history.state, targetSelectors, loadingSelectors }, '', redirectUrl);
+        fx.logDebug(`Navigation(${label}): redirected to`, redirectUrl);
+      } else if (redirectUrl && pushHistory) {
+        // Post/redirect/get. The redirect is the server naming a url for what
+        // it just did, and that one answers a GET, so it earns the entry the
+        // submission itself could not.
+        history.replaceState({ ...history.state, scrollY: window.scrollY }, '');
+        history.pushState({ targetSelectors, loadingSelectors }, '', redirectUrl);
         fx.logDebug(`Navigation(${label}): redirected to`, redirectUrl);
       }
 
@@ -162,9 +180,10 @@ window.fx = (() => {
       // The URL was optimistically updated before the fetch. Put it back, so
       // the fallback starts from the address the user is actually looking at.
       // Only the URL is wrong, so the state stays: clearing it would throw away
-      // the app's own state, and there is nothing to undo when the URL never
-      // moved — pushHistory alone is true for a navigation to the same URL.
-      if (isUrlChange) {
+      // the app's own state, and there is nothing to undo unless we moved the
+      // url ourselves — a navigation to the address already showing, or a
+      // submission, never did.
+      if (claimsUrl) {
         history.replaceState(history.state, '', originalUrl);
       }
 
@@ -512,7 +531,7 @@ window.fx = (() => {
   };
 
   let fx = {
-    version: '1.1.2',
+    version: '1.1.3',
     logInfo: noop,
     logDebug: noop,
     logWarn: noop,
