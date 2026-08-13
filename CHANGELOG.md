@@ -24,6 +24,10 @@ counts.
   across every tick, and a signal cannot be un-aborted, so the timeout meant to
   cancel one slow request stopped the polling with it — permanently, and without
   saying anything. Each request now carries its own.
+- An abort the browser made is treated as a cancel, not a failure. The browser
+  drops every in-flight fetch when a real navigation starts, and fx answered
+  that rejection with its fallback — replacing the location, and so overriding
+  the navigation the user had just asked for.
 
 ## 1.1.1
 

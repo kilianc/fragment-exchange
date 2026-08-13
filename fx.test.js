@@ -564,6 +564,30 @@ test('fetch timeouts are handled gracefully', async () => {
   await waitForText('ok', '#nav');
 });
 
+test('an abort the browser made is not a failure', async () => {
+  mockFetch(10, []);
+
+  // The browser aborts every in-flight fetch when a real navigation starts.
+  // That rejection carries no fx error of ours, and it used to reach the
+  // fallback — which replaces the location, overriding the navigation the user
+  // had just asked for.
+  window.fetch = async () => {
+    throw Object.assign(new Error('The user aborted a request.'), { name: 'AbortError' });
+  };
+
+  setPageHTML('/initial', `<a id="nav" href="/next" fx-target="#nav">nav</a>`);
+
+  let fellBack = false;
+  fx.clickFallback = () => {
+    fellBack = true;
+  };
+
+  document.getElementById('nav').click();
+  await wait(60);
+
+  assert(!fellBack, 'an abort reached the fallback and took the navigation over');
+});
+
 test('a failing form hands the submission back to the browser', async () => {
   mockFetch(10, ['error: Mock Server Error']);
 
