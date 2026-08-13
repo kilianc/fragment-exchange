@@ -387,11 +387,17 @@ window.fx = (() => {
     event.preventDefault();
 
     let submitter = event.submitter;
-    let url = submitter?.getAttribute('formaction') || form.action || window.location.href;
     let targetSelectors = form.getAttribute('fx-target');
     let loadingSelectors = form.getAttribute('fx-loading-target');
     let scrollBehavior = submitter?.getAttribute('fx-scroll') || form.getAttribute('fx-scroll');
-    let method = (submitter?.getAttribute('formmethod') || form.method || 'GET').toUpperCase();
+
+    // Attributes, never properties. A form exposes its controls as properties
+    // and they win over the ones the platform defines, so <input name="action">
+    // makes form.action an element. Resolving here also keeps a relative action
+    // comparable with the address bar, which decides whether history moves.
+    let action = submitter?.getAttribute('formaction') || form.getAttribute('action');
+    let url = new URL(action || '', window.location.href).href;
+    let method = (submitter?.getAttribute('formmethod') || form.getAttribute('method') || 'GET').toUpperCase();
     let body = new FormData(form);
 
     // A submit button's own name/value is part of the submission, and only the
@@ -409,7 +415,7 @@ window.fx = (() => {
     if (method === 'GET') {
       url = `${url}?${new URLSearchParams(body)}`;
       body = null;
-    } else if (!isMultipart(form)) {
+    } else if (!isMultipart(form, body)) {
       // Same choice a browser makes: urlencoded unless there is a file to send.
       // Handed to fetch as FormData it would go out as multipart, which most
       // server-side form parsers do not read by default.
@@ -434,9 +440,18 @@ window.fx = (() => {
     }
   }
 
-  function isMultipart(form) {
-    if (form.enctype === 'multipart/form-data') return true;
-    return Array.from(form.elements).some((el) => el.type === 'file' && el.files?.length);
+  // Read the files off the FormData rather than the form's elements: that
+  // honours inputs attached by the form attribute from outside the form, and no
+  // control named "elements" can shadow it. An empty file input still produces
+  // an entry, with no name — that is nothing to send, and stays urlencoded.
+  function isMultipart(form, body) {
+    if (form.getAttribute('enctype') === 'multipart/form-data') return true;
+
+    for (let value of body.values()) {
+      if (value instanceof File && value.name) return true;
+    }
+
+    return false;
   }
 
   let noop = () => {};
@@ -447,8 +462,10 @@ window.fx = (() => {
     window.location.replace(url);
   };
 
+  // Not form.submit(): a control named "submit" shadows the method, and this is
+  // the last thing standing between a failed submission and a lost one.
   let submitFallback = (form) => {
-    form.submit();
+    HTMLFormElement.prototype.submit.call(form);
   };
 
   let historyFallback = () => {
