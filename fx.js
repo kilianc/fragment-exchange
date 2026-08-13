@@ -113,12 +113,16 @@ window.fx = (() => {
       });
 
       updateFragments(targets, htmlText);
-      setupMetaRefresh();
 
       if (redirectUrl) {
         history.replaceState({ ...history.state, targetSelectors, loadingSelectors }, '', redirectUrl);
         fx.logDebug(`Navigation(${label}): redirected to`, redirectUrl);
       }
+
+      // After the redirect is recorded, never before: a timer reads the address
+      // bar once and keeps it, so setting one up first pins it to the url the
+      // server just sent us away from.
+      setupMetaRefresh();
 
       if (isUrlChange) {
         applyScroll(scrollBehavior, redirectUrl || url, originalUrl);
