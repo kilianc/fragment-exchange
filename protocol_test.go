@@ -3,6 +3,7 @@ package fx_test
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/kilianc/fragment-exchange"
@@ -110,17 +111,8 @@ func TestHandler(t *testing.T) {
 		if got := w.Header().Get("Content-Type"); got != "text/javascript; charset=utf-8" {
 			t.Errorf("%s: Content-Type = %q", path, got)
 		}
-		if body := w.Body.String(); len(body) == 0 || !contains(body, want) {
+		if !strings.Contains(w.Body.String(), want) {
 			t.Errorf("%s: body does not look like the right file", path)
 		}
 	}
-}
-
-func contains(haystack, needle string) bool {
-	for i := 0; i+len(needle) <= len(haystack); i++ {
-		if haystack[i:i+len(needle)] == needle {
-			return true
-		}
-	}
-	return false
 }

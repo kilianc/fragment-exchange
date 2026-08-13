@@ -7,6 +7,22 @@ fx follows semver over three surfaces: the attributes, the `fx` object, and the
 `FX-Target` header. See the versioning notes in the README for why the header
 counts.
 
+## 1.1.4
+
+### The library
+
+- An empty selector in an `fx-target` list is ignored. A stray comma produced a
+  selector `querySelector` rejects, and that threw before anything was swapped —
+  so the whole navigation failed into the browser and the link quietly became an
+  ordinary page load. The server already dropped those entries when it read the
+  header back, and so did `fx.dev.js` when it checked the attribute, which is
+  why nothing warned about it. All three now agree.
+
+### Inside
+
+- The hungry-element walk, which ran once over the current page and once over
+  the response, is one function. No behaviour change.
+
 ## 1.1.3
 
 ### The library

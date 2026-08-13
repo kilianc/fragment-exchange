@@ -19,6 +19,16 @@ import (
 // It is inline SVG with CSS variables for colour, so it follows the light and
 // dark themes for free and adds no request.
 
+// mod adds a modifier class when the flag is set. Every diagram in the package
+// draws the same shape two ways — plain, and picked out in the accent — so this
+// is the shape of nearly every class attribute here.
+func mod(base string, on bool, modifier string) string {
+	if !on {
+		return base
+	}
+	return base + " " + modifier
+}
+
 type frag struct {
 	Name     string
 	Cost     string
@@ -108,9 +118,6 @@ func defs() string {
 	return `<defs>
     <path id="fx-arrow-r" d="M0 0 l7 4 l-7 4 z" />
     <path id="fx-arrow-l" d="M7 0 l-7 4 l7 4 z" />
-    <filter id="fx-lift" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="6" stdDeviation="7" flood-opacity="0.13" />
-    </filter>
   </defs>`
 }
 
@@ -154,25 +161,16 @@ func row(s rowSpec) string {
 	fmt.Fprintf(&b, `<text class="d-sub" x="62" y="%d">%s</text>`, y+33, s.Subtitle)
 
 	// Browser: the page, as four stacked fragments.
-	browserClass := "d-box"
-	if s.WholeDoc {
-		browserClass = "d-box d-box-hot"
-	}
+	browserClass := mod("d-box", s.WholeDoc, "d-box-hot")
 	fmt.Fprintf(&b, `<rect class="%s" x="28" y="%d" width="200" height="%d" rx="9" />`, browserClass, boxY, boxH)
 	fmt.Fprintf(&b, `<text class="d-cap" x="40" y="%d">BROWSER</text>`, boxY+17)
 
 	for i, f := range s.Frags {
 		barY := boxY + 26 + i*23
-		cls := "d-frag"
-		if f.Swapped {
-			cls = "d-frag d-frag-swap"
-		}
+		cls := mod("d-frag", f.Swapped, "d-frag-swap")
 		fmt.Fprintf(&b, `<rect class="%s" x="42" y="%d" width="172" height="18" rx="4" />`, cls, barY)
 
-		label := "d-frag-t"
-		if f.Swapped {
-			label = "d-frag-t d-frag-t-swap"
-		}
+		label := mod("d-frag-t", f.Swapped, "d-frag-t-swap")
 		fmt.Fprintf(&b, `<text class="%s" x="51" y="%d">%s</text>`, label, barY+13, html.EscapeString(f.Name))
 
 		if f.Swapped {
@@ -187,10 +185,7 @@ func row(s rowSpec) string {
 	// The exchange.
 	reqY := boxY + 34
 	for i, line := range s.Request {
-		cls := "d-wire"
-		if i > 0 {
-			cls = "d-wire d-wire-hot"
-		}
+		cls := mod("d-wire", i > 0, "d-wire-hot")
 		fmt.Fprintf(&b, `<text class="%s" x="248" y="%d">%s</text>`, cls, reqY-32+i*15, line)
 	}
 
@@ -220,21 +215,15 @@ func row(s rowSpec) string {
 		fmt.Fprintf(&b, `<text class="%s" x="599" y="%d">%s</text>`, tcls, barY+13, html.EscapeString(f.Name))
 		fmt.Fprintf(&b, `<text class="%s" x="765" y="%d" text-anchor="end">%s</text>`, tcls, barY+13, f.Cost)
 
-		cost := "d-state"
-		if !f.Computed {
-			cost = "d-state d-state-skip"
-		}
+		cost := mod("d-state", !f.Computed, "d-state-skip")
 		fmt.Fprintf(&b, `<text class="%s" x="782" y="%d">%s</text>`, cost, barY+13, state)
 	}
 
-	fmt.Fprintf(&b, `<text class="d-total" x="765" y="%d" text-anchor="end">%s</text>`,
-		boxY+boxH+16, fmt.Sprintf("%s of work", human(total)))
+	fmt.Fprintf(&b, `<text class="d-total" x="765" y="%d" text-anchor="end">%s of work</text>`,
+		boxY+boxH+16, human(total))
 
 	// The point of the row.
-	outcome := "d-out"
-	if s.Fast {
-		outcome = "d-out d-out-fast"
-	}
+	outcome := mod("d-out", s.Fast, "d-out-fast")
 	fmt.Fprintf(&b, `<text class="%s" x="896" y="%d">%s</text>`, outcome, boxY+30, html.EscapeString(s.Outcome))
 	b.WriteString(wrap(s.Detail, 896, boxY+50, 29))
 
