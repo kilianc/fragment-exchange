@@ -7,6 +7,20 @@ fx follows semver over three surfaces: the attributes, the `fx` object, and the
 `FX-Target` header. See the versioning notes in the README for why the header
 counts.
 
+## 1.1.3
+
+### The library
+
+- A submission the server does not redirect leaves history alone. fx pushed the
+  address the form posted to, then re-fetched it with `GET` when the user came
+  back — a request the server never agreed to answer, and one no browser makes:
+  going back to a submitted page replays nothing and asks the network for
+  nothing, because the browser kept the response. fx keeps nothing, so it no
+  longer claims a URL it could only restore incorrectly.
+- Post/redirect/get is unchanged and is still the way to give a submission a URL
+  of its own. The redirect is the server naming an address that answers a `GET`,
+  and it earns the history entry the submission itself cannot.
+
 ## 1.1.2
 
 ### The library

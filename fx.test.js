@@ -201,6 +201,55 @@ test('the submitter decides the action, the method and its own value', async () 
   assert(call.options.body.get('id') === '7', 'other fields missing');
 });
 
+test('a submission the server did not redirect leaves the address bar alone', async () => {
+  mockFetch(10, ['<div id="result">saved</div>']);
+
+  setPageHTML(
+    '/form',
+    `
+    <div id="result">initial</div>
+    <form id="form" action="/submit" method="POST" fx-target="#result">
+      <button type="submit">save</button>
+    </form>
+  `,
+  );
+
+  let before = history.length;
+  document.getElementById('form').requestSubmit();
+  await waitForText('saved', '#result');
+
+  // The address a form posts to is not somewhere you can come back to. A
+  // browser going back to it replays nothing and asks the network for nothing;
+  // fx has no copy of the response to put back, so rather than leave an entry
+  // it would restore with a GET the server never agreed to answer, it leaves
+  // history alone and waits for a redirect to name a url worth keeping.
+  assertPathname('/form');
+  assert(history.length === before, 'the submission added a history entry', `${before} -> ${history.length}`);
+});
+
+test('a redirected submission takes the url the server named', async () => {
+  mockFetch(10, [{ html: '<div id="result">created</div>', redirectUrl: '/things/42' }]);
+
+  setPageHTML(
+    '/form',
+    `
+    <div id="result">initial</div>
+    <form id="form" action="/submit" method="POST" fx-target="#result">
+      <button type="submit">create</button>
+    </form>
+  `,
+  );
+
+  let before = history.length;
+  document.getElementById('form').requestSubmit();
+  await waitForText('created', '#result');
+
+  // Post/redirect/get: the redirect is the server naming a url for what it did,
+  // and that one is worth an entry — it answers a GET.
+  assertPathname('/things/42');
+  assert(history.length === before + 1, 'the redirect should add one entry', `${before} -> ${history.length}`);
+});
+
 test('a redirect replaces the url with where the server landed', async () => {
   mockFetch(10, [{ html: '<div id="result">created</div>', redirectUrl: '/things/42' }]);
 
