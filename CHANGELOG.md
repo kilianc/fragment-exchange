@@ -29,6 +29,17 @@ counts.
   that rejection with its fallback — replacing the location, and so overriding
   the navigation the user had just asked for.
 
+### The Go package
+
+- `fx.Wants` answers for a container whose contents were the target. A client
+  asking for `#content .row` left `fx.Wants(r, "#content")` false, so the
+  handler skipped the only thing that could have carried the row, and the swap
+  found nothing in the response — a click that quietly did nothing. It now
+  matches when either selector contains the other.
+- `fx.Wants` no longer counts a sibling as inside. `#content + .row` reads as a
+  descendant to a prefix comparison; it names an element beside the container,
+  which rendering the container does not produce.
+
 ## 1.1.1
 
 ### The library

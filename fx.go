@@ -96,8 +96,11 @@ func IsFragment(r *http.Request) bool {
 // never heard of fx keeps working, and one that opts in only skips work the
 // client has said it will throw away.
 //
-// A selector matches if the client asked for it exactly, or asked for an
-// ancestor by id — "#content" covers "#content .row".
+// A selector matches if the client asked for it exactly, or if either one
+// contains the other. "#content" covers "#content .row", because swapping the
+// container swaps the row with it; and a client that asked for "#content .row"
+// needs "#content" rendered, because that is the only way the response can
+// contain the row.
 func Wants(r *http.Request, selector string) bool {
 	targets := Targets(r)
 	if targets == nil {
@@ -105,11 +108,32 @@ func Wants(r *http.Request, selector string) bool {
 	}
 
 	for _, t := range targets {
-		if t == selector || strings.HasPrefix(selector, t+" ") {
+		if t == selector || isInside(selector, t) || isInside(t, selector) {
 			return true
 		}
 	}
 	return false
+}
+
+// isInside reports whether inner names something within outer: the same
+// selector with more on the end, joined by a descendant or child combinator.
+//
+// Sibling combinators are deliberately not here. "#content + .row" is beside
+// the container, not in it, so rendering "#content" does not produce it.
+func isInside(inner, outer string) bool {
+	rest, found := strings.CutPrefix(inner, outer)
+	if !found || rest == "" {
+		return false
+	}
+
+	// A combinator has to separate the two, or outer merely spells the start of
+	// inner: "#content" and "#contentious".
+	trimmed := strings.TrimLeft(rest, " \t\n")
+	if trimmed == rest && !strings.HasPrefix(rest, ">") {
+		return false
+	}
+
+	return trimmed != "" && !strings.ContainsAny(trimmed[:1], "+~")
 }
 
 // WantsAny reports whether any of the selectors has to be rendered.

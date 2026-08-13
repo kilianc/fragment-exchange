@@ -54,6 +54,18 @@ func TestWants(t *testing.T) {
 		{"one of several", "#content, #sidebar", "#sidebar", true},
 		{"a descendant of a requested target", "#content", "#content .row", true},
 		{"not a descendant, just a prefix", "#content", "#contentious", false},
+
+		// The client can name a descendant as its target. The container it
+		// lives in still has to be rendered, or the response cannot contain it
+		// and the swap finds nothing — a click that silently does nothing.
+		{"the container a requested descendant lives in", "#content .row", "#content", true},
+		{"a container two levels up", "#content .table .row", "#content", true},
+		{"a container that only shares a prefix", "#content .row", "#contentious", false},
+
+		// A child combinator is inside; a sibling one is beside, and rendering
+		// the container does not produce it.
+		{"a child combinator without spaces", "#content", "#content>.row", true},
+		{"a sibling is not inside", "#content", "#content + .row", false},
 	}
 
 	for _, tt := range tests {
