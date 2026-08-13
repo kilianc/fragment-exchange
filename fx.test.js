@@ -444,6 +444,44 @@ test('meta[name="fx-refresh"][fx-interval] should poll and self-replace', async 
   assert(fetchResponses.length === 0, 'no fetch responses should be left', fetchResponses.length);
 });
 
+test('a poll set up by a redirected response polls where the redirect landed', async () => {
+  let { calls, fetchResponses } = mockFetch(10, [
+    {
+      html: `
+        <div id="content">created</div>
+        <meta id="meta" name="fx-refresh" fx-interval="30" fx-target="#content" fx-hungry>
+      `,
+      redirectUrl: '/things/42',
+    },
+    `
+      <!-- disable the timer -->
+      <meta id="meta" fx-hungry>
+      <div id="content">polled</div>
+    `,
+  ]);
+
+  setPageHTML(
+    '/initial',
+    `
+    <div id="content">initial</div>
+    <meta id="meta">
+    <a id="link" href="/things/new" fx-target="#content, #meta">create</a>
+  `,
+  );
+
+  document.getElementById('link').click();
+  await waitForText('created', '#content');
+  assertPathname('/things/42');
+
+  await waitForText('polled', '#content');
+
+  // The timer reads the address bar once and keeps it for the life of the
+  // page. Set up before the redirect is recorded, it polls the url the server
+  // sent us away from — forever.
+  assert(calls[1].url.includes('/things/42'), 'the poll went to the pre-redirect url', calls[1].url);
+  assert(fetchResponses.length === 0, 'no fetch responses should be left', fetchResponses.length);
+});
+
 test('a poll that times out tries again', async () => {
   let { fetchResponses } = mockFetch(80, [
     `

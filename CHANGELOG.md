@@ -28,6 +28,10 @@ counts.
   drops every in-flight fetch when a real navigation starts, and fx answered
   that rejection with its fallback — replacing the location, and so overriding
   the navigation the user had just asked for.
+- A poller set up by a redirected response polls where the redirect landed. The
+  timers were started before the redirect was recorded, so they read the address
+  bar a moment too early and kept the URL the server had just sent them away
+  from — for the life of the page.
 
 ### The Go package
 
