@@ -68,6 +68,97 @@ test('fx-target accepts a list of selectors', async () => {
   assertText('three', '#three');
 });
 
+// Hungry elements are collected twice on purpose, from two different
+// documents, and the two collections mean different things:
+//
+//   - from the current page, before the request, so they can go in the header
+//     and a handler honouring FX-Target does not skip them;
+//   - from the response, after it arrives, so the server can mark something
+//     hungry that the page did not — updating an element this navigation never
+//     asked for. That is the server's call to make, and it makes it by
+//     answering, without the client knowing in advance.
+//
+// Collapsing either one into the other silently breaks a documented feature,
+// so this pins both, including what the header did and did not carry.
+test('the response can mark an element hungry that the page did not', async () => {
+  let { calls } = mockFetch(10, [
+    `
+      <div id="target">target-updated</div>
+      <div id="promoted" fx-hungry>promoted-updated</div>
+    `,
+  ]);
+
+  setPageHTML(
+    '/initial',
+    `
+    <div id="target">target</div>
+    <div id="promoted">promoted</div>
+    <a id="link" href="/next" fx-target="#target">go</a>
+  `,
+  );
+
+  document.getElementById('link').click();
+
+  await waitForText('target-updated', '#target');
+  // Swapped because the response said it was hungry — nobody asked for it.
+  await waitForText('promoted-updated', '#promoted');
+  assert(
+    calls[0].options.headers['FX-Target'] === '#target',
+    'the header should carry only what the page knew about at request time',
+    calls[0].options.headers['FX-Target'],
+  );
+});
+
+// The other half of the rule, and the limit on it: hungry names an element to
+// swap, so there has to be one already on the page. A hungry element that
+// exists only in the response has nothing to replace and is not injected.
+test('a hungry element only in the response is not inserted', async () => {
+  mockFetch(10, [`<div id="target">target-updated</div><div id="fresh" fx-hungry>fresh</div>`]);
+
+  setPageHTML(
+    '/initial',
+    `
+    <div id="target">target</div>
+    <a id="link" href="/next" fx-target="#target">go</a>
+  `,
+  );
+
+  document.getElementById('link').click();
+
+  await waitForText('target-updated', '#target');
+  await wait(60);
+  assert(!document.querySelector('#fresh'), 'a hungry element with nothing to replace was inserted');
+});
+
+test('a stray comma in fx-target does not lose the navigation', async () => {
+  let { calls } = mockFetch(10, [`<div id="one">one-updated</div>`]);
+
+  let fellBack = false;
+  fx.clickFallback = () => {
+    fellBack = true;
+  };
+
+  setPageHTML(
+    '/initial',
+    `
+    <div id="one">one</div>
+    <a id="link" href="/next" fx-target="#one, , ">go</a>
+  `,
+  );
+
+  document.getElementById('link').click();
+
+  await waitForText('one-updated', '#one');
+  // The empty entries never reach querySelector, and never reach the server —
+  // fx.Targets drops them at the other end, so the header agrees with both.
+  assert(
+    calls[0].options.headers['FX-Target'] === '#one',
+    'FX-Target should not carry empty selectors',
+    calls[0].options.headers['FX-Target'],
+  );
+  assert(!fellBack, 'fx handed the navigation back to the browser');
+});
+
 test('form[method="GET"][fx-target] submits and updates target', async () => {
   let { calls, fetchResponses } = mockFetch(20, [
     '<div id="result">got<script>window._fxTestScript = "ran";</script></div>',

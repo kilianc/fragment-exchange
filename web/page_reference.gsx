@@ -122,8 +122,12 @@ func referenceBody(c *Ctx) Node {
 				</p>,
 
 				<p>
-					Hungry elements are collected from both the current page and the response, so a fragment
-					can introduce a new hungry element and it will still be picked up.
+					Hungry elements are collected twice: from the current page before the request, and from
+					the response after it arrives. The first collection is what goes in the header. The
+					second is the useful one — your handler can mark an element hungry that the page did
+					not, and it is swapped on that same navigation, without the client having asked for it.
+					The element has to already be on the page: hungry names something to replace, so one
+					that appears only in the response has nothing to swap and is left alone.
 				</p>,
 			)}
 

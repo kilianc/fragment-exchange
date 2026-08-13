@@ -214,11 +214,7 @@ func MutationDiagram() g.Node {
 
 	for _, s := range steps {
 		b.WriteString(pbox(s.X, 40, 300, 150, "p-box", s.Cap))
-		cls := "p-code"
-		if s.Hot {
-			cls = "p-code p-code-hot"
-		}
-		b.WriteString(ptext(s.X+16, 88, cls, s.Line1))
+		b.WriteString(ptext(s.X+16, 88, mod("p-code", s.Hot, "p-code-hot"), s.Line1))
 		b.WriteString(ptext(s.X+16, 112, "p-code", s.Line2))
 		b.WriteString(ptext(s.X+16, 156, "p-note", s.Annotation))
 	}
@@ -252,11 +248,7 @@ func CheapDiagram() g.Node {
 		var c strings.Builder
 		c.WriteString(pbox(x, 40, 440, 250, "p-box", cap))
 
-		cls := "p-code"
-		if hot {
-			cls = "p-code p-code-hot"
-		}
-		c.WriteString(ptext(x+16, 86, cls, header))
+		c.WriteString(ptext(x+16, 86, mod("p-code", hot, "p-code-hot"), header))
 
 		for i, f := range frags {
 			y := 108 + i*34

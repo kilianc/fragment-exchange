@@ -302,7 +302,6 @@ type sessionLog struct {
 const logDepth = 14
 
 func (l *sessionLog) record(r *http.Request, p Page) *logEntry {
-
 	path := r.URL.Path
 	if r.URL.RawQuery != "" {
 		path += "?" + r.URL.RawQuery

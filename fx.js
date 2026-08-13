@@ -16,7 +16,7 @@ window.fx = (() => {
   }
 
   function cancelAllFetches() {
-    for (let controller of NAV_ABORT_CONTROLLERS_SET.values()) {
+    for (let controller of NAV_ABORT_CONTROLLERS_SET) {
       controller.abort(error('url changed'));
     }
 
@@ -37,7 +37,7 @@ window.fx = (() => {
       method,
       body,
       signal: controller.signal,
-      headers: { 'FX-Target': targetSelectors || '' },
+      headers: { 'FX-Target': targetSelectors },
     })
       // A failed status is not decided here. Whether the body is usable is
       // something only the caller can see, once it knows what it asked for.
@@ -71,11 +71,9 @@ window.fx = (() => {
 
     let startTime = performance.now();
 
-    let loadingElements = [];
-    if (loadingSelectors) {
-      loadingElements = Array.from(document.querySelectorAll(loadingSelectors));
-      loadingElements.forEach((el) => el.classList.add('fx-loading'));
-    }
+    // Guarded because querySelectorAll('') is a syntax error, not an empty list.
+    let loadingElements = loadingSelectors ? [...document.querySelectorAll(loadingSelectors)] : [];
+    loadingElements.forEach((el) => el.classList.add('fx-loading'));
 
     let originalUrl = window.location.href;
     let isUrlChange = pushHistory && url !== originalUrl;
@@ -142,15 +140,19 @@ window.fx = (() => {
 
       updateFragments(targets, newDocument);
 
-      if (redirectUrl && claimsUrl) {
-        history.replaceState({ ...history.state, targetSelectors, loadingSelectors }, '', redirectUrl);
-        fx.logDebug(`Navigation(${label}): redirected to`, redirectUrl);
-      } else if (redirectUrl && pushHistory) {
-        // Post/redirect/get. The redirect is the server naming a url for what
-        // it just did, and that one answers a GET, so it earns the entry the
-        // submission itself could not.
-        history.replaceState({ ...history.state, scrollY: window.scrollY }, '');
-        history.pushState({ targetSelectors, loadingSelectors }, '', redirectUrl);
+      // claimsUrl implies pushHistory, so this covers both: an entry we already
+      // pushed only needs its url corrected.
+      if (redirectUrl && pushHistory) {
+        if (claimsUrl) {
+          history.replaceState({ ...history.state, targetSelectors, loadingSelectors }, '', redirectUrl);
+        } else {
+          // Post/redirect/get. The redirect is the server naming a url for what
+          // it just did, and that one answers a GET, so it earns the entry the
+          // submission itself could not.
+          history.replaceState({ ...history.state, scrollY: window.scrollY }, '');
+          history.pushState({ targetSelectors, loadingSelectors }, '', redirectUrl);
+        }
+
         fx.logDebug(`Navigation(${label}): redirected to`, redirectUrl);
       }
 
@@ -219,20 +221,28 @@ window.fx = (() => {
     }
   }
 
-  function getTargets(targetSelectors) {
+  // A hungry element joins every navigation, whatever the link asked for. It is
+  // found by id, so one without an id is nothing that can be swapped.
+  //
+  // This runs over two documents, and the two answers are not the same list.
+  // The current page's hungry elements go in the header, so a handler honouring
+  // FX-Target renders them. The response's are read again afterwards, because
+  // the server is allowed to mark something hungry that the page did not — the
+  // element updates without this navigation ever having asked for it.
+  function hungryTargets(root) {
     let targets = [];
-
-    if (targetSelectors) {
-      targets.push(...targetSelectors.split(',').map((s) => s.trim()));
+    for (let el of root.querySelectorAll('[fx-hungry]')) {
+      if (el.id) targets.push(`#${el.id}`);
     }
-
-    let hungryElements = document.querySelectorAll('[fx-hungry]');
-    for (let el of hungryElements) {
-      if (!el.id) continue;
-      targets.push(`#${el.id}`);
-    }
-
     return targets;
+  }
+
+  // Empty entries are dropped, the same way the server drops them when it reads
+  // the header back: a stray comma in fx-target is a selector querySelector
+  // rejects, and that would fail the whole navigation instead of one fragment.
+  function getTargets(targetSelectors) {
+    let named = (targetSelectors || '').split(',').map((s) => s.trim());
+    return [...named.filter(Boolean), ...hungryTargets(document)];
   }
 
   let REFRESH_TIMERS_MAP = new Map();
@@ -264,8 +274,7 @@ window.fx = (() => {
       }
 
       let interval = parseInt(el.getAttribute('fx-interval'), 10);
-      if (isNaN(interval)) continue;
-      if (interval <= 0) continue;
+      if (isNaN(interval) || interval <= 0) continue;
 
       let url = window.location.href;
       let targetSelectors = el.getAttribute('fx-target');
@@ -307,21 +316,16 @@ window.fx = (() => {
     }
   }
 
-  function updateFragments(targetSelectors, newDocument) {
+  function updateFragments(targets, newDocument) {
     fx.__dev_mode__validateDom?.(newDocument);
 
-    let hungryElements = newDocument.querySelectorAll('[fx-hungry]');
-    for (let el of hungryElements) {
-      if (!el.id) continue;
-      targetSelectors.push(`#${el.id}`);
-    }
+    // Read again from the response: the server can mark an element hungry that
+    // the page did not, and it says so by answering. An element that is only in
+    // the response has nothing here to replace, and is skipped below.
+    let uniqueTargets = [...new Set([...targets, ...hungryTargets(newDocument)])];
+    fx.logDebug(`updateFragments: ${uniqueTargets.length} unique target selectors: [${uniqueTargets.join(', ')}]`);
 
-    let uniqueTargetSelectors = [...new Set(targetSelectors)];
-    fx.logDebug(
-      `updateFragments: ${uniqueTargetSelectors.length} unique target selectors: [${uniqueTargetSelectors.join(', ')}]`,
-    );
-
-    for (let selector of uniqueTargetSelectors) {
+    for (let selector of uniqueTargets) {
       let oldElement = document.querySelector(selector);
       if (!oldElement) {
         fx.logWarn('Target not in the current page, skipping:', selector);
@@ -366,28 +370,28 @@ window.fx = (() => {
   // do, one after another, so a fragment can load a library and then use it.
   async function runScripts(scripts) {
     for (let script of scripts) {
-      let attributes = script.attributes;
-      let isExternal = script.src;
-
       let newScript = document.createElement('script');
       newScript.async = false;
 
-      for (let attribute of attributes) {
+      for (let attribute of script.attributes) {
         newScript.setAttribute(attribute.name, attribute.value);
       }
 
-      await new Promise((resolve, reject) => {
-        if (!isExternal) {
-          newScript.textContent = script.textContent;
-          script.replaceWith(newScript);
-          resolve();
-          return;
-        }
+      if (!script.src) {
+        newScript.textContent = script.textContent;
+        script.replaceWith(newScript);
+        continue;
+      }
 
+      // Both handlers have to be attached before the insertion, because that is
+      // what starts the load.
+      let loaded = new Promise((resolve, reject) => {
         newScript.onload = resolve;
         newScript.onerror = () => reject(error(`failed to load ${newScript.src}`, 'FxScriptError'));
-        script.replaceWith(newScript);
       });
+
+      script.replaceWith(newScript);
+      await loaded;
     }
   }
 
@@ -531,7 +535,7 @@ window.fx = (() => {
   };
 
   let fx = {
-    version: '1.1.3',
+    version: '1.1.4',
     logInfo: noop,
     logDebug: noop,
     logWarn: noop,

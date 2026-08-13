@@ -29,6 +29,22 @@ JavaScript, or in their server template? If yes, they should.
 5. **No dependencies, ever.** Not in `fx.js`, not in `go.mod` for the tests. `go.mod`
    carries exactly one entry, for the site's rendering.
 
+## Things that look like duplication and are not
+
+Both of these have been "simplified" away and had to be put back. If you are
+about to remove one, write the test that proves it first.
+
+- **fx.js collects `[fx-hungry]` twice**, from two documents. The current page's
+  hungry elements go in the `FX-Target` header before the request. The
+  response's are read again afterwards, because the server is allowed to mark an
+  element hungry that the page did not — that element updates without the
+  navigation ever asking for it. Collapsing the two loses a documented feature
+  and nothing fails loudly.
+- **`var body Node = x` in a `.gsx` file** is load-bearing. GSX compiles an
+  interpolated expression to `Text()` unless it can read the declared type off a
+  local, and it does not follow a range variable back to its slice. Removing the
+  temporary does not compile.
+
 ## Tests
 
 `go test ./...` is the whole story. Three suites:

@@ -56,6 +56,10 @@ func Cols(left Node, right Node) Node {
 func Steps(items ...Node) Node {
 	var lis []Node
 	for _, item := range items {
+		// The `var … Node` is load-bearing. GSX compiles an interpolated
+		// expression to Text() unless it can read the declared type off a local,
+		// and it does not follow a range variable back to its slice — so
+		// {item} would try to print a Node as a string, and not compile.
 		var body Node = item
 		lis = append(lis, html.Li(body))
 	}
