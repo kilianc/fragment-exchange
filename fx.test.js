@@ -98,6 +98,31 @@ test('form[method="GET"][fx-target] submits and updates target', async () => {
   assert(fetchResponses.length === 0, 'no fetch responses should be left', fetchResponses.length);
 });
 
+test('a GET form replaces the query string in its action', async () => {
+  let { calls } = mockFetch(10, ['<div id="result">found</div>']);
+
+  setPageHTML(
+    '/initial',
+    `
+    <div id="result">initial</div>
+    <form id="form" action="/search?tab=all#results" method="GET" fx-target="#result">
+      <input name="q" value="hello">
+      <button type="submit">submit</button>
+    </form>
+  `,
+  );
+
+  document.getElementById('form').requestSubmit();
+  await waitForText('found', '#result');
+
+  // The fields are the query string now. A browser replaces it; appending
+  // produced /search?tab=all?q=hello, which no server reads as either.
+  let url = new URL(calls[0].url);
+  assert(url.pathname === '/search', 'wrong path', url.pathname);
+  assert(url.search === '?q=hello', 'the action query string was appended, not replaced', url.search);
+  assert(url.hash === '#results', 'the action fragment was lost', url.hash);
+});
+
 test('form[method="POST"][fx-target] submits and updates target', async () => {
   let { calls, fetchResponses } = mockFetch(20, [
     '<div id="result">posted<script>window._fxPostScript = "ran-post";</script></div>',

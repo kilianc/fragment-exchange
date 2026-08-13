@@ -32,6 +32,10 @@ counts.
   timers were started before the redirect was recorded, so they read the address
   bar a moment too early and kept the URL the server had just sent them away
   from — for the life of the page.
+- A `GET` form replaces the query string in its `action` instead of appending to
+  it, which is what a browser does with the same form. `action="/search?tab=all"`
+  produced `/search?tab=all?q=hello`; if the action also carried a fragment, the
+  fields were appended to that and never reached the server at all.
 
 ### The Go package
 
