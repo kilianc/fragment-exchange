@@ -562,6 +562,43 @@ test('a failing form hands the submission back to the browser', async () => {
   assert(!document.querySelector('#form button').disabled, 'submit button left disabled');
 });
 
+test('a form whose controls shadow its own properties still submits', async () => {
+  let { calls } = mockFetch(10, ['error: Mock Server Error']);
+
+  // A form exposes its controls as properties, and those win over the ones the
+  // platform defines — including its methods. Every name here is one a real
+  // form uses, and each one used to break fx in a different way.
+  //
+  // The submission is aimed at an iframe so the real form.submit() the fallback
+  // performs lands there instead of navigating the page running the tests.
+  setPageHTML(
+    '/initial',
+    `
+    <div id="result">initial</div>
+    <iframe name="sink" style="display:none"></iframe>
+    <form id="form" action="/submit" method="POST" target="sink" fx-target="#result">
+      <input name="action" value="clobbered">
+      <input name="method" value="clobbered">
+      <button type="submit" name="submit" value="go">submit</button>
+    </form>
+  `,
+  );
+
+  document.getElementById('form').requestSubmit();
+  await waitUntil(() => calls.length > 0, 'the form never reached the network');
+
+  let call = calls[0];
+  assert(call.url.includes('/submit'), 'the action attribute lost to the control named action', call.url);
+  assert(call.options.method === 'POST', 'the method attribute lost to the control named method', call.options.method);
+
+  // The fallback runs form.submit(), which is shadowed by the button named
+  // "submit". When it throws, the await never returns and the form stays dead.
+  await waitUntil(
+    () => !document.querySelector('#form button').disabled,
+    'submit button left disabled, the fallback threw',
+  );
+});
+
 test('clicks the browser should keep are left alone', async () => {
   let { calls } = mockFetch(10, []);
 

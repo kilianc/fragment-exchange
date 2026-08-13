@@ -15,6 +15,11 @@ counts.
   history API refused the foreign URL and threw before the request was made —
   cancelling the navigation without performing one, so the link did nothing at
   all. `mailto:` and `tel:` links carrying an `fx-target` were dead the same way.
+- Forms are read through their attributes, not their properties. A form exposes
+  its controls as properties and they win over the ones the platform defines, so
+  a field named `action` or `method` replaced the form's own — and a button
+  named `submit`, which is ordinary markup, shadowed `form.submit()` and made
+  the fallback throw, losing the submission it existed to rescue.
 
 ## 1.1.1
 
