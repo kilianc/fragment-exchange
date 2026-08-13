@@ -571,6 +571,8 @@ test('clicks the browser should keep are left alone', async () => {
     <a id="modified" href="/no" fx-target="#modified">modified</a>
     <a id="blank" href="/no" target="_blank" fx-target="#blank">new tab</a>
     <a id="download" href="/no" download fx-target="#download">download</a>
+    <a id="foreign" href="https://example.com/page" fx-target="#foreign">another origin</a>
+    <a id="mailto" href="mailto:someone@example.com" fx-target="#mailto">mail</a>
   `,
   );
 
@@ -589,10 +591,19 @@ test('clicks the browser should keep are left alone', async () => {
   document.getElementById('blank').dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
   document.getElementById('download').dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
 
+  // fx cannot read another origin's document, and history refuses a url from
+  // one. Taking the click would leave the user on a page that never moved.
+  document.getElementById('foreign').dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+  document.getElementById('mailto').dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+
   await wait(30);
   document.removeEventListener('click', spy);
 
-  assert(prevented.join() === 'false,false,false', 'fx hijacked a click it should have ignored', prevented.join());
+  assert(
+    prevented.join() === 'false,false,false,false,false',
+    'fx hijacked a click it should have ignored',
+    prevented.join(),
+  );
   assert(calls.length === 0, 'fx fetched for a click it should have ignored', calls.length);
 });
 
