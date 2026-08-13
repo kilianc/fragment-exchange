@@ -127,7 +127,11 @@ window.fx = (() => {
       let duration = Math.round(performance.now() - startTime);
       fx.logInfo(`Navigation(${label}): complete in ${duration}ms`, redirectUrl || url);
     } catch (err) {
-      if (err.name === 'FxError') {
+      // FxError is our own cancel. AbortError is the browser's — it drops every
+      // in-flight fetch when a real navigation starts, and answering that with
+      // a fallback would replace the location the user is already on their way
+      // to. Either way the request was called off, not lost.
+      if (err.name === 'FxError' || err.name === 'AbortError') {
         fx.logDebug(`Navigation(${label}): fetch aborted:`, err.message);
         return;
       }
