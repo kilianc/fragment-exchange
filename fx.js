@@ -357,6 +357,9 @@ window.fx = (() => {
   }
 
   async function handleClick(event) {
+    // Somebody already said no. fx delegates from the document, so it is the
+    // last to hear about an event and has no business overruling the answer.
+    if (event.defaultPrevented) return;
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
 
     let link = event.target.closest('a[href][fx-target]');
@@ -392,6 +395,8 @@ window.fx = (() => {
   }
 
   async function handleSubmit(event) {
+    if (event.defaultPrevented) return;
+
     let form = event.target;
     if (!form.hasAttribute('fx-target')) return;
 

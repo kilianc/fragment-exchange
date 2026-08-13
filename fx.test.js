@@ -742,6 +742,38 @@ test('a form whose controls shadow its own properties still submits', async () =
   );
 });
 
+test('an event another listener already cancelled is left alone', async () => {
+  let { calls } = mockFetch(10, []);
+
+  setPageHTML(
+    '/initial',
+    `
+    <div id="result">initial</div>
+    <a id="link" href="/next" fx-target="#result">go</a>
+    <form id="form" action="/submit" method="POST" fx-target="#result">
+      <button type="submit">submit</button>
+    </form>
+  `,
+  );
+
+  // Cancelling in the capture phase runs before fx, which listens on the
+  // document. It is how a page says "not this one" — a confirmation that was
+  // declined, a control that handles its own click.
+  let cancel = (event) => event.preventDefault();
+  document.addEventListener('click', cancel, true);
+  document.addEventListener('submit', cancel, true);
+
+  document.getElementById('link').click();
+  document.getElementById('form').requestSubmit();
+  await wait(40);
+
+  document.removeEventListener('click', cancel, true);
+  document.removeEventListener('submit', cancel, true);
+
+  assert(calls.length === 0, 'fx acted on an event another listener had cancelled', calls.length);
+  assertText('initial', '#result');
+});
+
 test('clicks the browser should keep are left alone', async () => {
   let { calls } = mockFetch(10, []);
 
