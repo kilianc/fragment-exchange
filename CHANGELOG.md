@@ -36,6 +36,11 @@ counts.
   it, which is what a browser does with the same form. `action="/search?tab=all"`
   produced `/search?tab=all?q=hello`; if the action also carried a fragment, the
   fields were appended to that and never reached the server at all.
+- Going back to a history entry fx never wrote leaves it alone. An in-page
+  anchor makes one, and so does an application recording its own state; fx used
+  to fetch the whole page for these and then swap nothing out of it, because
+  nothing on the entry named what to swap. The document they belong to is the
+  one already on screen.
 
 ### The Go package
 

@@ -508,8 +508,18 @@ window.fx = (() => {
   window.addEventListener('popstate', async (event) => {
     fx.logDebug('Popstate:', event);
 
-    let targetSelectors = event.state?.targetSelectors;
-    let loadingSelectors = event.state?.loadingSelectors;
+    // An entry fx never wrote is not fx's to restore. An in-page anchor makes
+    // one, and so does an application recording its own state; both belong to
+    // the document already on screen, and whoever pushed the entry is the one
+    // who knows what it meant. fx used to fetch the whole page for these and
+    // swap nothing out of it, because there was nothing naming what to swap.
+    if (!event.state || !('targetSelectors' in event.state)) {
+      fx.logDebug('Popstate: no fx state on this entry, leaving it alone');
+      return;
+    }
+
+    let targetSelectors = event.state.targetSelectors;
+    let loadingSelectors = event.state.loadingSelectors;
 
     cancelAllTimers();
     cancelAllFetches();
