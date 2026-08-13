@@ -709,6 +709,55 @@ test('an abort the browser made is not a failure', async () => {
   assert(!fellBack, 'an abort reached the fallback and took the navigation over');
 });
 
+test('a rejected form is swapped in, not posted a second time', async () => {
+  let { calls } = mockFetch(10, [{ html: '<div id="result">email is already taken</div>', status: 422 }]);
+
+  setPageHTML(
+    '/initial',
+    `
+    <div id="result">initial</div>
+    <form id="form" action="/signup" method="POST" fx-target="#result">
+      <input name="email" value="taken@example.com">
+      <button type="submit">submit</button>
+    </form>
+  `,
+  );
+
+  let resubmitted = false;
+  fx.submitFallback = () => {
+    resubmitted = true;
+  };
+
+  document.getElementById('form').requestSubmit();
+  await waitForText('email is already taken', '#result');
+
+  // Handing this back to the browser would post the form again, repeating
+  // whatever the first attempt already did on the server.
+  assert(!resubmitted, 'a rejected form was handed back to the browser and posted again');
+  assert(calls.length === 1, 'the form was sent more than once', calls.length);
+});
+
+test('a failed response without the fragment goes back to the browser', async () => {
+  mockFetch(10, [{ html: '<html><body><h1>502 Bad Gateway</h1></body></html>', status: 502 }]);
+
+  setPageHTML(
+    '/initial',
+    `
+    <div id="result">initial</div>
+    <a id="link" href="/next" fx-target="#result">go</a>
+  `,
+  );
+
+  let fellBack = false;
+  fx.clickFallback = () => {
+    fellBack = true;
+  };
+
+  document.getElementById('link').click();
+  await waitUntil(() => fellBack, 'an error page fx cannot use should end in an ordinary navigation');
+  assertText('initial', '#result');
+});
+
 test('a failing form hands the submission back to the browser', async () => {
   mockFetch(10, ['error: Mock Server Error']);
 

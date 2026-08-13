@@ -49,6 +49,13 @@ counts.
   waited on `DOMContentLoaded` without checking whether it had already fired, so
   loading the library with `async`, or from an injected tag, meant polling never
   began. `fx.dev.js` already made this check.
+- A failed response that rendered the requested fragments is swapped in. Any
+  status other than 2xx was discarded and the navigation handed to the browser,
+  which for a form meant posting it a second time — repeating whatever the first
+  attempt had already done. A rejected form coming back with its errors is the
+  ordinary answer to a `422`, not a failure. A failed response that does not
+  contain the fragments is still an error page fx cannot use, and still ends in
+  an ordinary navigation.
 
 ### The Go package
 
