@@ -41,6 +41,10 @@ counts.
   to fetch the whole page for these and then swap nothing out of it, because
   nothing on the entry named what to swap. The document they belong to is the
   one already on screen.
+- A click or submit another listener has already cancelled is left alone. fx
+  delegates from the document, so it hears about an event last and was
+  overruling code that had said no — a declined confirmation, or a control that
+  handles its own click.
 
 ### The Go package
 
