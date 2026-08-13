@@ -45,6 +45,10 @@ counts.
   delegates from the document, so it hears about an event last and was
   overruling code that had said no — a declined confirmation, or a control that
   handles its own click.
+- `fx-refresh` starts polling when `fx.js` is loaded after the document. fx
+  waited on `DOMContentLoaded` without checking whether it had already fired, so
+  loading the library with `async`, or from an injected tag, meant polling never
+  began. `fx.dev.js` already made this check.
 
 ### The Go package
 

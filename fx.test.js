@@ -497,6 +497,36 @@ test('meta[name="fx-refresh"][fx-interval] should poll and self-replace', async 
   assert(fetchResponses.length === 0, 'no fetch responses should be left', fetchResponses.length);
 });
 
+test('fx.js loaded after the document still starts polling', async () => {
+  // Every other case here drives an fx that was loaded with the page. This one
+  // has to load it into a document that is already finished, so it needs a
+  // frame of its own: with async, or from an injected tag, DOMContentLoaded has
+  // been and gone by the time fx runs, and it never fires twice.
+  let frame = document.createElement('iframe');
+  document.body.appendChild(frame);
+  await waitUntil(() => frame.contentDocument?.readyState === 'complete', 'the frame never finished loading');
+
+  let doc = frame.contentDocument;
+  doc.body.innerHTML = `
+    <meta id="poller" name="fx-refresh" fx-interval="30" fx-target="#p">
+    <div id="p">initial</div>
+  `;
+
+  let calls = 0;
+  frame.contentWindow.fetch = async (url) => {
+    calls++;
+    return { ok: true, status: 200, url: String(url), redirected: false, text: async () => '<div id="p">polled</div>' };
+  };
+
+  let script = doc.createElement('script');
+  script.src = '/fx.js';
+  doc.head.appendChild(script);
+
+  await waitUntil(() => calls > 0, 'fx never polled, it was waiting for an event that had already fired');
+
+  frame.remove();
+});
+
 test('a poll set up by a redirected response polls where the redirect landed', async () => {
   let { calls, fetchResponses } = mockFetch(10, [
     {

@@ -508,7 +508,14 @@ window.fx = (() => {
 
   document.addEventListener('click', handleClick);
   document.addEventListener('submit', handleSubmit);
-  document.addEventListener('DOMContentLoaded', () => setupMetaRefresh());
+  // Waiting for an event that has already fired means waiting forever, and fx
+  // is meant to be copy-pasteable: async, defer, or an injected tag are all
+  // ordinary ways to load it, and all of them arrive after the document.
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => setupMetaRefresh());
+  } else {
+    setupMetaRefresh();
+  }
 
   window.addEventListener('popstate', async (event) => {
     fx.logDebug('Popstate:', event);
