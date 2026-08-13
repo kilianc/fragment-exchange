@@ -39,14 +39,16 @@ window.fx = (() => {
       signal: controller.signal,
       headers: { 'FX-Target': targetSelectors || '' },
     })
-      .then((r) => {
-        let redirectUrl = r.redirected ? r.url : null;
-        return r.ok
-          ? r.text().then((text) => ({ htmlText: text, redirectUrl }))
-          : r.text().then((text) => {
-              throw new Error(`HTTP ${r.status}: ${text}`);
-            });
-      })
+      // A failed status is not decided here. Whether the body is usable is
+      // something only the caller can see, once it knows what it asked for.
+      .then((r) =>
+        r.text().then((htmlText) => ({
+          htmlText,
+          redirectUrl: r.redirected ? r.url : null,
+          ok: r.ok,
+          status: r.status,
+        })),
+      )
       .finally(() => {
         clearTimeout(timeout);
         NAV_ABORT_CONTROLLERS_SET.delete(controller);
@@ -104,7 +106,7 @@ window.fx = (() => {
       // updating.
       let targets = getTargets(targetSelectors);
 
-      let { htmlText, redirectUrl } = await fetchWithAbort({
+      let { htmlText, redirectUrl, ok, status } = await fetchWithAbort({
         url,
         method,
         body,
@@ -112,7 +114,22 @@ window.fx = (() => {
         abortController,
       });
 
-      updateFragments(targets, htmlText);
+      let newDocument = new DOMParser().parseFromString(htmlText, 'text/html');
+
+      // A failed response that rendered what we asked for is a handler
+      // answering with the page — a form coming back with its errors is the
+      // ordinary case, and resubmitting that would repeat whatever the first
+      // attempt already did on the server. A failed response without those
+      // fragments is an error page fx cannot use, and the browser gets it.
+      //
+      // Reading what arrived, rather than the status code, keeps this out of
+      // the attribute surface: nothing to configure, and no list of statuses
+      // to be wrong about.
+      if (!ok && !(targetSelectors && newDocument.querySelector(targetSelectors))) {
+        throw new Error(`HTTP ${status}`);
+      }
+
+      updateFragments(targets, newDocument);
 
       if (redirectUrl) {
         history.replaceState({ ...history.state, targetSelectors, loadingSelectors }, '', redirectUrl);
@@ -271,8 +288,7 @@ window.fx = (() => {
     }
   }
 
-  function updateFragments(targetSelectors, htmlText) {
-    let newDocument = new DOMParser().parseFromString(htmlText, 'text/html');
+  function updateFragments(targetSelectors, newDocument) {
     fx.__dev_mode__validateDom?.(newDocument);
 
     let hungryElements = newDocument.querySelectorAll('[fx-hungry]');

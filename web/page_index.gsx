@@ -425,7 +425,7 @@ func reports(w http.ResponseWriter, r *http.Request) {
 				</p>,
 
 				Snippet("html", "index.html", `
-<script src="https://cdn.jsdelivr.net/gh/kilianc/fragment-exchange@v1.1.2/fx.js" integrity="sha384-Qev8c/CPWtpM1Y1N+t1ngj8hDkirWbMrl4IQHv6hJ0OZ7SnEDTRleAjA7dYwDvol" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/gh/kilianc/fragment-exchange@v1.1.2/fx.js" integrity="sha384-S0XjYKZ2l9uwTcPCd+U+WzAjbeaPvT0KKyBnkQWChsqMRfTt9EHwyzQ/WB78XrpT" crossorigin="anonymous"></script>
 `),
 
 				<p>
