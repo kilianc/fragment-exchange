@@ -7,6 +7,15 @@ fx follows semver over three surfaces: the attributes, the `fx` object, and the
 `FX-Target` header. See the versioning notes in the README for why the header
 counts.
 
+## 1.1.2
+
+### The library
+
+- A link to another origin is left to the browser. fx took the click, then the
+  history API refused the foreign URL and threw before the request was made —
+  cancelling the navigation without performing one, so the link did nothing at
+  all. `mailto:` and `tel:` links carrying an `fx-target` were dead the same way.
+
 ## 1.1.1
 
 ### The library

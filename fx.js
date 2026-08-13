@@ -355,6 +355,11 @@ window.fx = (() => {
     if (link.hasAttribute('download')) return;
     if (link.target && link.target !== '_self') return;
 
+    // Another origin is not ours to swap: we cannot read the document, and
+    // history refuses a url from it. mailto: and tel: land here too, with an
+    // opaque origin. Taking the click would only strand the user on this page.
+    if (link.origin !== window.location.origin) return;
+
     event.preventDefault();
     fx.logDebug('Click:', link);
 
@@ -451,7 +456,7 @@ window.fx = (() => {
   };
 
   let fx = {
-    version: '1.1.1',
+    version: '1.1.2',
     logInfo: noop,
     logDebug: noop,
     logWarn: noop,
