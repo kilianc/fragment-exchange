@@ -425,7 +425,13 @@ window.fx = (() => {
     }
 
     if (method === 'GET') {
-      url = `${url}?${new URLSearchParams(body)}`;
+      // The fields become the query string, they are not added to it — the same
+      // thing a browser does with the same form. Appending produced
+      // /search?tab=all?q=hello, and with a fragment in the action it appended
+      // to that instead, so the fields never reached the server at all.
+      let target = new URL(url);
+      target.search = new URLSearchParams(body);
+      url = target.href;
       body = null;
     } else if (!isMultipart(form, body)) {
       // Same choice a browser makes: urlencoded unless there is a file to send.

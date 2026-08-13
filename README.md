@@ -88,7 +88,7 @@ what you get today is what you keep — the file is yours once you have it.
 If you would rather not vendor it, tagged releases are on jsDelivr:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/kilianc/fragment-exchange@v1.1.2/fx.js" integrity="sha384-HupUGr56J/aR0lygjNlXcquI/xAHgI9yTud5FHIAo4M6voD86gcPi2oDafxf6pxq" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/gh/kilianc/fragment-exchange@v1.1.2/fx.js" integrity="sha384-OVZ44jOPenSxX/sIjl/stNHPpK09c6rySOqWkEnqnLfGaqD7F1QTbjxCgPUUMq5/" crossorigin="anonymous"></script>
 ```
 
 Pin the tag and keep the hash. An unpinned URL hands someone else the right to change the
