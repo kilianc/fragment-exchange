@@ -301,6 +301,34 @@ test('history state the app set survives an fx navigation', async () => {
   assert(fetchResponses.length === 0, 'no fetch responses should be left', fetchResponses.length);
 });
 
+test('popstate on an entry fx did not create is left alone', async () => {
+  let { calls } = mockFetch(10, []);
+
+  setPageHTML('/initial', `<div id="content">initial</div>`);
+
+  let reloaded = false;
+  fx.historyFallback = () => {
+    reloaded = true;
+  };
+
+  // An in-page anchor, or an application recording its own state. Neither
+  // carries fx's bookkeeping, and the document both belong to is the one
+  // already on screen — there is nothing for fx to restore.
+  let pops = 0;
+  let countPops = () => pops++;
+  window.addEventListener('popstate', countPops);
+
+  history.pushState(null, '', '/initial#section');
+  history.back();
+  await waitUntil(() => pops > 0, 'the history entry never came back, the test proves nothing');
+  await wait(40);
+  window.removeEventListener('popstate', countPops);
+
+  assert(calls.length === 0, 'fx fetched for a history entry it never rendered', calls.length);
+  assert(!reloaded, 'fx reloaded the page for a history entry it never rendered');
+  assertText('initial', '#content');
+});
+
 test('a navigation resets the scroll position and popstate restores it', async () => {
   let { fetchResponses } = mockFetch(10, [
     '<div id="content" style="height: 4000px"><a id="link-to-b" href="/page-b" fx-target="#content">page a</a></div>',
